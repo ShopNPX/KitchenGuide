@@ -1,0 +1,2525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>KitchenOS — Smart Kitchen Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0d0f12;
+    --bg-secondary: #13161b;
+    --bg-card: #181c23;
+    --bg-card-hover: #1e2330;
+    --accent-orange: #f97316;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-glow: rgba(249,115,22,0.15);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(249,115,22,0.3);
+    --radius: 20px;
+    --radius-lg: 28px;
+    --radius-sm: 12px;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-primary); }
+  #root { width: 100%; height: 100vh; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideLeft { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 20px rgba(249,115,22,0.2); } 50% { box-shadow: 0 0 40px rgba(249,115,22,0.5); } }
+  @keyframes timerTick { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+  @keyframes waveIn { from { opacity:0; transform: scale(0.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes stepDone { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+  .fade-in { animation: fadeIn 0.4s ease forwards; }
+  .slide-left { animation: slideLeft 0.4s ease forwards; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border-radius: var(--radius-sm); font-family: var(--font-display); font-weight: 600; font-size: 15px; cursor: pointer; border: none; transition: all 0.2s ease; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent-orange), #ea580c); color: white; box-shadow: 0 4px 24px rgba(249,115,22,0.35); }
+  .btn-primary:hover { box-shadow: 0 6px 32px rgba(249,115,22,0.5); transform: translateY(-1px); }
+  .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-success { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .btn-lg { padding: 18px 32px; font-size: 17px; border-radius: var(--radius); }
+  .btn-icon { padding: 12px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
+  .btn-icon:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+  .btn-icon:active { transform: scale(0.93); }
+  .card { background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; transition: all 0.25s ease; }
+  .card:hover { border-color: rgba(255,255,255,0.1); }
+  .card-glow { border-color: var(--border-accent); box-shadow: 0 0 30px var(--accent-glow); }
+  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; font-family: var(--font-display); }
+  .tag-orange { background: rgba(249,115,22,0.15); color: var(--accent-orange); }
+  .tag-amber { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+  .tag-green { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .tag-red { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+  .tag-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tag-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-display); font-size: 15px; outline: none; transition: all 0.2s ease; }
+  .input:focus { border-color: var(--accent-orange); box-shadow: 0 0 0 3px rgba(249,115,22,0.1); }
+  .input::placeholder { color: var(--text-muted); }
+  .chip { padding: 8px 16px; border-radius: 100px; cursor: pointer; font-family: var(--font-display); font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text-secondary); transition: all 0.2s ease; white-space: nowrap; }
+  .chip:hover { border-color: var(--border-accent); color: var(--accent-orange); }
+  .chip.active { background: rgba(249,115,22,0.15); border-color: var(--border-accent); color: var(--accent-orange); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 16px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; color: var(--text-muted); font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; position: relative; }
+  .nav-item:hover { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: var(--accent-orange); }
+  .nav-item.active::before { content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); width: 24px; height: 2px; background: var(--accent-orange); border-radius: 2px; }
+  .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent-orange), var(--accent-amber)); transition: width 0.5s ease; }
+  .chat-bubble { max-width: 75%; padding: 14px 18px; border-radius: 18px; font-family: var(--font-display); font-size: 14px; line-height: 1.5; animation: waveIn 0.3s ease forwards; }
+  .chat-bubble.user { background: linear-gradient(135deg, var(--accent-orange), #ea580c); color: white; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .chat-bubble.assistant { background: var(--bg-card-hover); color: var(--text-primary); border: 1px solid var(--border); border-bottom-left-radius: 4px; align-self: flex-start; }
+  .timer-ring { position: relative; display: flex; align-items: center; justify-content: center; }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring-text { position: absolute; display: flex; flex-direction: column; align-items: center; font-family: var(--font-mono); }
+  .checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; }
+  .checkbox.checked { background: var(--accent-orange); border-color: var(--accent-orange); }
+  .scrollable { overflow-y: auto; overflow-x: hidden; }
+  .hide-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+  .hide-scroll::-webkit-scrollbar { display: none; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .divider { height: 1px; background: var(--border); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .modal { background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border); max-width: 900px; width: 100%; max-height: 90vh; overflow: hidden; animation: waveIn 0.35s ease; transform: scale(0.9); opacity: 0; transition: all 0.3s ease; }
+  .modal.show { transform: scale(1); opacity: 1; }
+  body.modal-open { overflow: hidden; }
+  
+  /* RTL-specific improvements */
+  [dir="rtl"] .modal-overlay { padding-left: 24px; padding-right: 24px; }
+  [dir="rtl"] .modal { text-align: right; }
+  [dir="rtl"] .checkbox { margin-left: 0; margin-right: 8px; }
+  [dir="rtl"] .nav-item { flex-direction: row-reverse; }
+  [dir="rtl"] .card { text-align: right; }
+  [dir="rtl"] .chat-bubble { border-radius: 18px 18px 4px 4px; }
+  [dir="rtl"] .chat-bubble.user { margin-left: 12px; margin-right: 0; }
+  [dir="rtl"] .chat-bubble.assistant { margin-left: 0; margin-right: 12px; }
+  [dir="rtl"] input { text-align: right; }
+  [dir="rtl"] .progress-bar { transform: scaleX(-1); }
+  [dir="rtl"] .progress-fill { transform-origin: right; }
+  .star { color: var(--accent-amber); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-orange); animation: pulse 2s infinite; }
+  .gradient-text { background: linear-gradient(135deg, var(--accent-orange), var(--accent-amber)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .glow-text { text-shadow: 0 0 30px rgba(249,115,22,0.5); }
+  .food-emoji { font-size: 56px; line-height: 1; }
+  .typing-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); animation: pulse 1s infinite; display: inline-block; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  .step-advance-banner { background: linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.05)); border: 1px solid rgba(34,197,94,0.4); border-radius: 16px; padding: 16px 24px; text-align: center; animation: stepDone 0.5s ease; }
+  select.input { appearance: none; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── LOCALSTORAGE HELPERS ──────────────────────────────────────────────────────
+const LS = {
+  get: (key, fallback) => {
+    try { const v = localStorage.getItem('kitchenos_' + key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+  },
+  set: (key, val) => {
+    try { localStorage.setItem('kitchenos_' + key, JSON.stringify(val)); } catch {}
+  }
+};
+
+// ─── TRANSLATIONS ───────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    // Navigation
+    nav: {
+      home: 'Home',
+      recipes: 'Recipes',
+      shopping: 'Shopping',
+      inventory: 'Inventory',
+      ai: 'AI Chef',
+      timers: 'Timers',
+      settings: 'Settings'
+    },
+    // Common
+    common: {
+      close: 'Close',
+      save: 'Save',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      add: 'Add',
+      edit: 'Edit',
+      search: 'Search',
+      loading: 'Loading',
+      error: 'Error',
+      success: 'Success',
+      back: 'Back',
+      next: 'Next',
+      previous: 'Previous',
+      finish: 'Finish',
+      start: 'Start',
+      pause: 'Pause',
+      reset: 'Reset',
+      exit: 'Exit'
+    },
+    // Pages
+    home: {
+      title: 'KitchenOS',
+      subtitle: 'EGYPTIAN SMART KITCHEN',
+      greeting: 'Good morning',
+      afternoon: 'Good afternoon',
+      evening: 'Good evening',
+      night: 'Good night',
+      suggested: 'Suggested for now',
+      cookIt: 'Cook It',
+      savedRecipes: 'Saved Recipes',
+      egyptianDishes: 'Egyptian Dishes',
+      airFryerRecipes: 'Air Fryer Recipes',
+      bakingRecipes: 'Baking Recipes',
+      available: 'available',
+      saveList: 'Save your list',
+      trackIngredients: 'Track ingredients',
+      askAnything: 'Ask anything',
+      multiTimer: 'Multi-timer'
+    },
+    recipes: {
+      title: 'Recipes',
+      addMyRecipe: 'Add My Recipe',
+      searchRecipes: 'Search recipes...',
+      noRecipes: 'No recipes found',
+      tryDifferent: 'Try a different search or category',
+      ingredients: 'Ingredients',
+      stepsOverview: 'Steps Overview',
+      startCookingMode: 'Start Cooking Mode',
+      servings: 'servings',
+      calories: 'calories',
+      minutes: 'min',
+      myRecipe: 'My Recipe',
+      searchIngredients: 'Search ingredients...',
+      selectAll: 'Select All',
+      deselectAll: 'Deselect All',
+      all: 'All',
+      other: 'Other'
+    },
+    shopping: {
+      title: 'Shopping List',
+      itemsCollected: 'items collected',
+      of: 'of',
+      clearDone: 'Clear done',
+      addItem: 'Add item...',
+      addQty: 'Qty...',
+      listEmpty: 'List is empty',
+      addItemsAbove: 'Add items above'
+    },
+    inventory: {
+      title: 'Inventory',
+      items: 'items',
+      ingredientName: 'Ingredient name...',
+      qty: 'Qty...',
+      unit: 'Unit...',
+      inventoryEmpty: 'Inventory is empty',
+      addIngredients: 'Add your ingredients above'
+    },
+    ai: {
+      title: 'AI Chef Assistant',
+      online: 'Online',
+      placeholder: 'Ask about Egyptian food, baking, air fryer...',
+      greeting: "Ahlan! 👋 أهلاً وسهلاً! I'm your Egyptian kitchen assistant.\n\nI know all 20 Egyptian dishes in your recipe book — from Koshari to Kunafa — plus air fryer and baking recipes. Ask me anything!"
+    },
+    timers: {
+      title: 'Kitchen Timers',
+      timerName: 'Timer name...',
+      minutes: 'Minutes...',
+      add: 'Add',
+      noTimers: 'No timers running',
+      addPreset: 'Add a preset or custom timer above',
+      timer: 'timer'
+    },
+    settings: {
+      title: 'Settings',
+      preferences: 'Preferences',
+      account: 'Account',
+      darkMode: 'Dark Mode',
+      darkModeDesc: 'Optimized for kitchen lighting',
+      voiceCommands: 'Voice Commands',
+      voiceCommandsDesc: 'Hands-free kitchen control',
+      timerAlerts: 'Timer Alerts',
+      timerAlertsDesc: 'Audio & visual notifications',
+      tabletMode: 'Tablet Mode',
+      tabletModeDesc: 'Large touch targets & layout',
+      fullscreen: 'Fullscreen',
+      fullscreenDesc: 'Use full display space',
+      language: 'Language',
+      editProfile: 'Edit Profile',
+      connectedDevices: 'Connected Devices',
+      dataPrivacy: 'Data & Privacy',
+      about: 'About KitchenOS'
+    }
+  },
+  ar: {
+    // Navigation
+    nav: {
+      home: 'الرئيسية',
+      recipes: 'الوصفات',
+      shopping: 'التسوق',
+      inventory: 'المخزون',
+      ai: 'الطاهي الذكي',
+      timers: 'المؤقتات',
+      settings: 'الإعدادات'
+    },
+    // Common
+    common: {
+      close: 'إغلاق',
+      save: 'حفظ',
+      cancel: 'إلغاء',
+      delete: 'حذف',
+      add: 'إضافة',
+      edit: 'تعديل',
+      search: 'بحث',
+      loading: 'تحميل',
+      error: 'خطأ',
+      success: 'نجح',
+      back: 'رجوع',
+      next: 'التالي',
+      previous: 'السابق',
+      finish: 'إنهاء',
+      start: 'بدء',
+      pause: 'إيقاف',
+      reset: 'إعادة تعيين',
+      exit: 'خروج'
+    },
+    // Pages
+    home: {
+      title: 'KitchenOS',
+      subtitle: 'المطبخ الذكي المصري',
+      greeting: 'صباح الخير',
+      afternoon: 'طاب مساؤك',
+      evening: 'مساء الخير',
+      night: 'طاب مساؤك',
+      suggested: 'مقترح للآن',
+      cookIt: 'اطبخه',
+      savedRecipes: 'الوصفات المحفوظة',
+      egyptianDishes: 'الأطباق المصرية',
+      airFryerRecipes: 'وصفات المقلاة الهوائية',
+      bakingRecipes: 'وصفات الخبز',
+      available: 'متاح',
+      saveList: 'احفظ قائمتك',
+      trackIngredients: 'تتبع المكونات',
+      askAnything: 'اسأل أي شيء',
+      multiTimer: 'مؤقت متعدد'
+    },
+    recipes: {
+      title: 'الوصفات',
+      addMyRecipe: 'إضافة وصفتي',
+      searchRecipes: 'ابحث عن الوصفات...',
+      noRecipes: 'لم يتم العثور على وصفات',
+      tryDifferent: 'جرب بحثًا أو فئة مختلفة',
+      ingredients: 'المكونات',
+      stepsOverview: 'نظرة عامة على الخطوات',
+      startCookingMode: 'بدء وضع الطهي',
+      servings: 'حصص',
+      calories: 'سعرات حرارية',
+      minutes: 'دقيقة',
+      myRecipe: 'وصفتي',
+      searchIngredients: 'ابحث عن المكونات...',
+      selectAll: 'اختر الكل',
+      deselectAll: 'إلغاء الاختيار الكل',
+      all: 'الكل',
+      other: 'أخرى'
+    },
+    shopping: {
+      title: 'قائمة التسوق',
+      itemsCollected: 'عناصر تم جمعها',
+      of: 'من',
+      clearDone: 'مسح المكتمل',
+      addItem: 'إضافة عنصر...',
+      addQty: 'الكمية...',
+      listEmpty: 'القائمة فارغة',
+      addItemsAbove: 'أضف عناصر أعلاه',
+      ingredientName: 'اسم المكون...',
+      ingredientUnit: 'وحدة المكون...',
+      ingredientQuantity: 'كمية المكون...',
+      ingredientCategory: 'فئة المكون...',
+      ingredientSearch: 'ابحث عن المكونات...',
+      ingredientAdd: 'إضافة مكون...',
+      ingredientEdit: 'تعديل المكون...',
+      ingredientDelete: 'حذف المكون...'
+    },
+    inventory: {
+      title: 'المخزون',
+      items: 'عناصر',
+      ingredientName: 'اسم المكون...',
+      qty: 'الكمية...',
+      unit: 'الوحدة...',
+      inventoryEmpty: 'المخزون فارغ',
+      addIngredients: 'أضف مكوناتك أعلاه'
+    },
+    ai: {
+      title: 'مساعد الطاهي الذكي',
+      online: 'متصل',
+      placeholder: 'اسأل عن الطعام المصري، الخبز، المقلاة الهوائية...',
+      suggestedPrompts: [
+        "ما هي الطبق المصري الذي يجب أن أطبخه؟",
+        "بديل للطحينة",
+        "كم من الوقت يستغرق الكشري؟",
+        "وصفة سريعة في المقلاة الهوائية",
+        "خبز سهل للمبتدئين",
+        "إفطار مصري صحي"
+      ]
+    },
+    timers: {
+      title: 'مؤقتات المطبخ',
+      timerName: 'اسم المؤقت...',
+      minutes: 'دقائق...',
+      add: 'إضافة',
+      noTimers: 'لا توجد مؤقتات تعمل',
+      addPreset: 'أضف مؤقتًا محددًا مسبقًا أو مخصصًا أعلاه'
+    },
+    settings: {
+      title: 'الإعدادات',
+      preferences: 'التفضيلات',
+      account: 'الحساب',
+      darkMode: 'الوضع الليلي',
+      darkModeDesc: 'محسّن لإضاءة المطبخ',
+      voiceCommands: 'الأوامر الصوتية',
+      voiceCommandsDesc: 'تحكم في المطبخ بدون استخدام اليدين',
+      timerAlerts: 'تنبيهات المؤقت',
+      timerAlertsDesc: 'إشعارات صوتية ومرئية',
+      tabletMode: 'وضع الجهاز اللوحي',
+      tabletModeDesc: 'أهداف لمس كبيرة وتخطيط',
+      fullscreen: 'ملء الشاشة',
+      fullscreenDesc: 'استخدم مساحة العرض الكاملة',
+      language: 'اللغة',
+      editProfile: 'تعديل الملف الشخصي',
+      connectedDevices: 'الأجهزة المتصلة',
+      dataPrivacy: 'البيانات والخصوصية',
+      about: 'حول KitchenOS'
+    }
+  },
+  ar: {
+    // Navigation
+    nav: {
+      home: 'الرئيسية',
+      recipes: 'الوصفات',
+      shopping: 'التسوق',
+      inventory: 'المخزون',
+      ai: 'الطاهي الذكي',
+      timers: 'المؤقتات',
+      settings: 'الإعدادات'
+    },
+    // Common
+    common: {
+      close: 'إغلاق',
+      save: 'حفظ',
+      cancel: 'إلغاء',
+      delete: 'حذف',
+      add: 'إضافة',
+      edit: 'تعديل',
+      search: 'بحث',
+      loading: 'تحميل',
+      error: 'خطأ',
+      success: 'نجح',
+      back: 'رجوع',
+      next: 'التالي',
+      previous: 'السابق',
+      finish: 'إنهاء',
+      start: 'بدء',
+      pause: 'إيقاف',
+      reset: 'إعادة تعيين',
+      exit: 'خروج'
+    },
+    // Pages
+    home: {
+      title: 'KitchenOS',
+      subtitle: 'المطبخ الذكي المصري',
+      greeting: 'صباح الخير',
+      afternoon: 'طاب مساؤك',
+      evening: 'مساء الخير',
+      night: 'طاب مساؤك',
+      suggested: 'مقترح للآن',
+      cookIt: 'اطبخه',
+      savedRecipes: 'الوصفات المحفوظة',
+      egyptianDishes: 'الأطباق المصرية',
+      airFryerRecipes: 'وصفات المقلاة الهوائية',
+      bakingRecipes: 'وصفات الخبز',
+      available: 'متاح',
+      saveList: 'احفظ قائمتك',
+      trackIngredients: 'تتبع المكونات',
+      askAnything: 'اسأل أي شيء',
+      multiTimer: 'مؤقت متعدد'
+    },
+    recipes: {
+      title: 'الوصفات',
+      addMyRecipe: 'إضافة وصفتي',
+      searchRecipes: 'ابحث عن الوصفات...',
+      noRecipes: 'لم يتم العثور على وصفات',
+      tryDifferent: 'جرب بحثًا أو فئة مختلفة',
+      ingredients: 'المكونات',
+      stepsOverview: 'نظرة عامة على الخطوات',
+      startCookingMode: 'بدء وضع الطهي',
+      servings: 'حصص',
+      calories: 'سعرات حرارية',
+      minutes: 'دقيقة',
+      myRecipe: 'وصفتي',
+      searchIngredients: 'ابحث عن المكونات...',
+      selectAll: 'اختر الكل',
+      deselectAll: 'إلغاء الاختيار الكل',
+      all: 'الكل',
+      other: 'أخرى'
+    },
+    shopping: {
+      title: 'قائمة التسوق',
+      itemsCollected: 'عناصر تم جمعها',
+      of: 'من',
+      clearDone: 'مسح المكتمل',
+      addItem: 'إضافة عنصر...',
+      addQty: 'الكمية...',
+      listEmpty: 'القائمة فارغة',
+      addItemsAbove: 'أضف عناصر أعلاه',
+      ingredientName: 'اسم المكون...',
+      ingredientUnit: 'وحدة المكون...',
+      ingredientQuantity: 'كمية المكون...',
+      ingredientCategory: 'فئة المكون...',
+      ingredientSearch: 'ابحث عن المكونات...',
+      ingredientAdd: 'إضافة مكون...',
+      ingredientEdit: 'تعديل المكون...',
+      ingredientDelete: 'حذف المكون...'
+    },
+    inventory: {
+      title: 'المخزون',
+      items: 'عناصر',
+      ingredientName: 'اسم المكون...',
+      qty: 'الكمية...',
+      unit: 'الوحدة...',
+      inventoryEmpty: 'المخزون فارغ',
+      addIngredients: 'أضف مكوناتك أعلاه'
+    },
+    ai: {
+      title: 'مساعد الطاهي الذكي',
+      online: 'متصل',
+      placeholder: 'اسأل عن الطعام المصري، الخبز، المقلاة الهوائية...',
+      suggestedPrompts: [
+        "ما هي الطبق المصري الذي يجب أن أطبخه؟",
+        "بديل للطحينة",
+        "كم من الوقت يستغرق الكشري؟",
+        "وصفة سريعة في المقلاة الهوائية",
+        "خبز سهل للمبتدئين",
+        "إفطار مصري صحي"
+      ]
+    },
+    timers: {
+      title: 'مؤقتات المطبخ',
+      timerName: 'اسم المؤقت...',
+      minutes: 'دقائق...',
+      add: 'إضافة',
+      noTimers: 'لا توجد مؤقتات تعمل',
+      addPreset: 'أضف مؤقتًا محددًا مسبقًا أو مخصصًا أعلاه'
+    },
+    settings: {
+      title: 'الإعدادات',
+      preferences: 'التفضيلات',
+      account: 'الحساب',
+      darkMode: 'الوضع الليلي',
+      darkModeDesc: 'محسّن لإضاءة المطبخ',
+      voiceCommands: 'الأوامر الصوتية',
+      voiceCommandsDesc: 'تحكم في المطبخ بدون استخدام اليدين',
+      timerAlerts: 'تنبيهات المؤقت',
+      timerAlertsDesc: 'إشعارات صوتية ومرئية',
+      tabletMode: 'وضع الجهاز اللوحي',
+      tabletModeDesc: 'أهداف لمس كبيرة وتخطيط',
+      fullscreen: 'ملء الشاشة',
+      fullscreenDesc: 'استخدم مساحة العرض الكاملة',
+      language: 'اللغة',
+      editProfile: 'تعديل الملف الشخصي',
+      connectedDevices: 'الأجهزة المتصلة',
+      dataPrivacy: 'البيانات والخصوصية',
+      about: 'حول KitchenOS'
+    }
+  }
+};
+
+// ─── EGYPTIAN & OTHER RECIPE DATA ─────────────────────────────────────────────
+const DEFAULT_RECIPES = [
+  {
+    id: 1, name: "Koshari", emoji: "🍚", category: "Egyptian",
+    time: 60, difficulty: "Medium", rating: 4.9, calories: 580, servings: 4,
+    tags: ["Egyptian", "Vegetarian", "Street Food"],
+    description: "Egypt's beloved national dish — a hearty mix of rice, lentils, pasta, and chickpeas topped with spiced tomato sauce and crispy onions.",
+    ingredients: [
+      { id: 1, name: "White rice", amount: "1.5 cups", checked: false },
+      { id: 2, name: "Brown lentils", amount: "1 cup", checked: false },
+      { id: 3, name: "Small pasta (elbow/ditalini)", amount: "1 cup", checked: false },
+      { id: 4, name: "Canned chickpeas", amount: "400g", checked: false },
+      { id: 5, name: "Large onions, thinly sliced", amount: "3", checked: false },
+      { id: 6, name: "Canned crushed tomatoes", amount: "800g", checked: false },
+      { id: 7, name: "Garlic cloves, minced", amount: "6", checked: false },
+      { id: 8, name: "White vinegar", amount: "2 tbsp", checked: false },
+      { id: 9, name: "Cumin", amount: "2 tsp", checked: false },
+      { id: 10, name: "Coriander", amount: "1 tsp", checked: false },
+      { id: 11, name: "Cayenne pepper", amount: "½ tsp", checked: false },
+      { id: 12, name: "Oil for frying", amount: "½ cup", checked: false },
+    ],
+    steps: [
+      { title: "Cook the Lentils", instruction: "Rinse lentils and boil in salted water for 15–20 minutes until just tender but not mushy. Drain and set aside.", timer: 1200, icon: "🫘" },
+      { title: "Cook the Rice", instruction: "In a pot, cook rice with 2 cups salted water for 18 minutes on low heat until fluffy. Fold lentils gently into the cooked rice.", timer: 1080, icon: "🍚" },
+      { title: "Cook the Pasta", instruction: "Boil pasta in salted water until al dente, about 8 minutes. Drain well.", timer: 480, icon: "🍝" },
+      { title: "Fry the Onions", instruction: "Heat oil in a deep pan. Fry onion slices in batches over medium-high heat, stirring occasionally, until deeply golden and crispy, about 15 minutes. Remove with a slotted spoon onto paper towels.", timer: 900, icon: "🧅" },
+      { title: "Make the Tomato Sauce (Da'a)", instruction: "In a saucepan, sauté garlic in 2 tbsp oil for 1 min. Add crushed tomatoes, cumin, coriander, cayenne, vinegar, salt, and pepper. Simmer uncovered for 15 minutes until thick and fragrant.", timer: 900, icon: "🍅" },
+      { title: "Assemble & Serve", instruction: "Layer rice-lentil mixture on a plate, top with pasta, then chickpeas. Ladle the tomato sauce over generously, and finish with a big pile of crispy onions. Serve immediately.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a1208", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 2, name: "Molokhia", emoji: "🌿", category: "Egyptian",
+    time: 45, difficulty: "Medium", rating: 4.8, calories: 320, servings: 4,
+    tags: ["Egyptian", "Soup", "Chicken"],
+    description: "A velvety, garlicky green soup made from jute leaves — one of Egypt's oldest dishes, served over rice with tangy vinegar onions.",
+    ingredients: [
+      { id: 1, name: "Fresh or frozen molokhia leaves", amount: "500g", checked: false },
+      { id: 2, name: "Chicken (whole or pieces)", amount: "1 kg", checked: false },
+      { id: 3, name: "Garlic cloves, minced", amount: "8", checked: false },
+      { id: 4, name: "Coriander powder", amount: "2 tsp", checked: false },
+      { id: 5, name: "Butter or ghee", amount: "3 tbsp", checked: false },
+      { id: 6, name: "Onion", amount: "1 large", checked: false },
+      { id: 7, name: "Bay leaves", amount: "2", checked: false },
+      { id: 8, name: "Cardamom pods", amount: "4", checked: false },
+      { id: 9, name: "White vinegar", amount: "3 tbsp", checked: false },
+      { id: 10, name: "Cooked white rice", amount: "for serving", checked: false },
+    ],
+    steps: [
+      { title: "Make the Chicken Stock", instruction: "In a large pot, place chicken with onion, bay leaves, cardamom, salt, and enough water to cover. Bring to a boil and simmer for 35 minutes until chicken is cooked through. Remove chicken, strain and reserve the stock.", timer: 2100, icon: "🍗" },
+      { title: "Prepare the Molokhia", instruction: "If using fresh leaves, finely chop them (very finely — this is important for texture). If using frozen, thaw completely and squeeze out moisture.", timer: 0, icon: "🌿" },
+      { title: "Heat the Stock", instruction: "Bring 4 cups of the reserved stock to a gentle simmer in a pot. Season with salt. Add the molokhia and stir well — it will thicken the soup. Cook on low heat for 5 minutes. Do not boil vigorously.", timer: 300, icon: "🫕" },
+      { title: "Make the Ta'leyya (Garlic Sizzle)", instruction: "In a small pan, melt butter over medium heat. Add minced garlic and coriander. Stir constantly for 1–2 minutes until the garlic turns golden and the aroma fills the kitchen. Pour immediately into the molokhia and stir well.", timer: 90, icon: "🧄" },
+      { title: "Serve", instruction: "Serve the molokhia over white rice with pieces of chicken on the side. Offer a small bowl of white vinegar mixed with diced onion as a condiment — it cuts through the richness perfectly.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#0a1a0a", accentColor: "#14532d", custom: false,
+  },
+  {
+    id: 3, name: "Mahshi", emoji: "🫑", category: "Egyptian",
+    time: 90, difficulty: "Hard", rating: 4.7, calories: 420, servings: 6,
+    tags: ["Egyptian", "Stuffed", "Vegetarian"],
+    description: "Vegetables stuffed with a fragrant rice and herb mixture, slow-cooked in a tangy tomato broth until perfectly tender.",
+    ingredients: [
+      { id: 1, name: "Bell peppers or zucchini", amount: "8 medium", checked: false },
+      { id: 2, name: "Short grain rice (uncooked)", amount: "2 cups", checked: false },
+      { id: 3, name: "Crushed tomatoes", amount: "2 cups", checked: false },
+      { id: 4, name: "Fresh parsley, finely chopped", amount: "1 cup", checked: false },
+      { id: 5, name: "Fresh dill, chopped", amount: "½ cup", checked: false },
+      { id: 6, name: "Tomato paste", amount: "3 tbsp", checked: false },
+      { id: 7, name: "Onion, grated", amount: "1 large", checked: false },
+      { id: 8, name: "Olive oil", amount: "4 tbsp", checked: false },
+      { id: 9, name: "Cumin", amount: "1.5 tsp", checked: false },
+      { id: 10, name: "Allspice", amount: "1 tsp", checked: false },
+      { id: 11, name: "Lemon juice", amount: "3 tbsp", checked: false },
+      { id: 12, name: "Salt and pepper", amount: "to taste", checked: false },
+    ],
+    steps: [
+      { title: "Prepare the Stuffing", instruction: "Mix uncooked rice with grated onion, parsley, dill, olive oil, 1 cup crushed tomatoes, cumin, allspice, salt, and pepper. The rice should be coated but not wet. Taste — it should be well-seasoned.", timer: 0, icon: "🌾" },
+      { title: "Hollow the Vegetables", instruction: "Cut the tops off peppers or zucchini and hollow them out carefully with a small spoon, leaving the walls intact. Save the tops if using peppers — they act as lids during cooking.", timer: 0, icon: "🫑" },
+      { title: "Stuff the Vegetables", instruction: "Fill each vegetable ¾ full with the rice mixture — leave room for the rice to expand as it cooks. Replace pepper tops or seal zucchini open end with a tomato slice.", timer: 0, icon: "🍚" },
+      { title: "Make the Cooking Broth", instruction: "Mix remaining crushed tomatoes, tomato paste, lemon juice, 2 cups water, olive oil, and salt in a pot. Place stuffed vegetables standing upright in the broth.", timer: 0, icon: "🍅" },
+      { title: "Slow Cook", instruction: "Bring to a boil, then reduce heat to the lowest setting. Cover tightly and simmer for 50–60 minutes until rice is fully cooked and vegetables are very tender. Check halfway — add a splash of water if needed.", timer: 3000, icon: "⏳" },
+      { title: "Rest & Serve", instruction: "Let rest covered for 10 minutes off heat. This helps the stuffing firm up. Serve warm with yogurt or extra lemon on the side.", timer: 600, icon: "🍽️" },
+    ],
+    bgColor: "#0d1a08", accentColor: "#166534", custom: false,
+  },
+  {
+    id: 4, name: "Fattah", emoji: "🫙", category: "Egyptian",
+    time: 75, difficulty: "Medium", rating: 4.8, calories: 650, servings: 6,
+    tags: ["Egyptian", "Celebratory", "Lamb"],
+    description: "A festive layered dish of crispy bread, rice, and tender lamb bathed in a garlic-vinegar tomato sauce — served at celebrations.",
+    ingredients: [
+      { id: 1, name: "Lamb pieces (shoulder/shank)", amount: "1.5 kg", checked: false },
+      { id: 2, name: "White rice", amount: "2 cups", checked: false },
+      { id: 3, name: "Egyptian flatbread or pita", amount: "4 loaves", checked: false },
+      { id: 4, name: "Tomato sauce", amount: "2 cups", checked: false },
+      { id: 5, name: "Garlic cloves", amount: "8", checked: false },
+      { id: 6, name: "White vinegar", amount: "4 tbsp", checked: false },
+      { id: 7, name: "Beef/lamb stock", amount: "1 L", checked: false },
+      { id: 8, name: "Ghee or butter", amount: "4 tbsp", checked: false },
+      { id: 9, name: "Cinnamon stick", amount: "1", checked: false },
+      { id: 10, name: "Parsley for garnish", amount: "handful", checked: false },
+    ],
+    steps: [
+      { title: "Cook the Lamb", instruction: "Brown lamb pieces in ghee in a large pot. Add onion, cinnamon, cardamom, bay leaf, and enough water to cover. Simmer for 1 hour until lamb is fall-off-the-bone tender. Reserve the broth.", timer: 3600, icon: "🥩" },
+      { title: "Cook the Rice", instruction: "Cook rice in 2 cups of the reserved lamb broth with a pinch of salt and butter. Cook on low heat for 18 minutes until fluffy and all stock is absorbed.", timer: 1080, icon: "🍚" },
+      { title: "Toast the Bread", instruction: "Cut flatbread into rough squares. Spread on a baking tray and toast in a 200°C oven or in a dry pan until deeply crispy and golden. The crunchier the better — they'll soften under the sauce.", timer: 480, icon: "🫓" },
+      { title: "Make the Vinegar-Garlic Sauce", instruction: "In a saucepan, fry garlic in a little ghee until golden. Add tomato sauce, vinegar, and ½ cup lamb broth. Season with salt and cumin. Simmer for 10 minutes until thick and tangy.", timer: 600, icon: "🧄" },
+      { title: "Assemble the Fattah", instruction: "In a large deep dish: first layer the toasted bread. Ladle enough sauce over it to just soften. Then layer the rice. Top with the lamb pieces. Pour the remaining sauce over everything. Garnish with parsley.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a0e08", accentColor: "#7c2d12", custom: false,
+  },
+  {
+    id: 5, name: "Ful Medames", emoji: "🫘", category: "Egyptian",
+    time: 30, difficulty: "Easy", rating: 4.7, calories: 280, servings: 4,
+    tags: ["Egyptian", "Breakfast", "Vegetarian"],
+    description: "Egypt's classic breakfast — slow-cooked fava beans seasoned with lemon, garlic, cumin, and olive oil. Simple, sustaining, and delicious.",
+    ingredients: [
+      { id: 1, name: "Canned fava beans (ful)", amount: "2 × 400g cans", checked: false },
+      { id: 2, name: "Garlic cloves, minced", amount: "4", checked: false },
+      { id: 3, name: "Lemon juice", amount: "3 tbsp", checked: false },
+      { id: 4, name: "Olive oil", amount: "3 tbsp", checked: false },
+      { id: 5, name: "Cumin", amount: "1 tsp", checked: false },
+      { id: 6, name: "Fresh parsley, chopped", amount: "handful", checked: false },
+      { id: 7, name: "Tomatoes, diced", amount: "2 medium", checked: false },
+      { id: 8, name: "Green chili (optional)", amount: "1", checked: false },
+    ],
+    steps: [
+      { title: "Heat the Beans", instruction: "Drain and rinse fava beans. Place in a saucepan with a splash of water. Heat over medium heat, stirring occasionally, for 5–7 minutes. Mash some beans with a fork to create a thick, creamy consistency.", timer: 420, icon: "🫘" },
+      { title: "Season", instruction: "Add garlic, lemon juice, cumin, and salt to taste. Stir well and cook for another 3 minutes. Taste and adjust — ful should be punchy with lemon and garlic.", timer: 180, icon: "🧄" },
+      { title: "Serve", instruction: "Serve in a shallow bowl. Drizzle generously with olive oil. Top with chopped parsley, diced tomatoes, and sliced chili if using. Eat with warm flatbread — perfect for dipping.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#0e0e08", accentColor: "#713f12", custom: false,
+  },
+  {
+    id: 6, name: "Taameya", emoji: "🧆", category: "Egyptian",
+    time: 30, difficulty: "Easy", rating: 4.8, calories: 240, servings: 4,
+    tags: ["Egyptian", "Street Food", "Vegetarian"],
+    description: "Egyptian falafel made with fava beans instead of chickpeas — crispy outside, vivid green and fluffy inside. Cairo's favourite street food.",
+    ingredients: [
+      { id: 1, name: "Dried split fava beans, soaked overnight", amount: "2 cups", checked: false },
+      { id: 2, name: "Fresh parsley", amount: "1 cup", checked: false },
+      { id: 3, name: "Fresh coriander", amount: "1 cup", checked: false },
+      { id: 4, name: "Garlic cloves", amount: "5", checked: false },
+      { id: 5, name: "Onion", amount: "1 medium", checked: false },
+      { id: 6, name: "Cumin", amount: "1.5 tsp", checked: false },
+      { id: 7, name: "Coriander powder", amount: "1 tsp", checked: false },
+      { id: 8, name: "Baking powder", amount: "1 tsp", checked: false },
+      { id: 9, name: "Sesame seeds", amount: "3 tbsp", checked: false },
+      { id: 10, name: "Oil for deep frying", amount: "2 cups", checked: false },
+    ],
+    steps: [
+      { title: "Blend the Mixture", instruction: "Drain soaked fava beans (they should be soft). In a food processor, blend beans with parsley, coriander, garlic, onion, cumin, coriander powder, salt, and pepper. Process until finely ground but not a smooth paste — it should have texture.", timer: 0, icon: "🫘" },
+      { title: "Rest the Mixture", instruction: "Transfer to a bowl, add baking powder, mix well. Refrigerate for 30 minutes. This helps the taameya hold together when frying.", timer: 1800, icon: "❄️" },
+      { title: "Shape the Taameya", instruction: "Wet your hands. Shape the mixture into flat discs about 4cm wide and 1.5cm thick (not round balls — Egyptian taameya is flat!). Press sesame seeds onto both sides.", timer: 0, icon: "🥏" },
+      { title: "Fry to Crispy Perfection", instruction: "Heat oil to 175°C. Fry taameya in batches for 2–3 minutes per side until deep golden brown. Don't move them in the first minute — let a crust form. Drain on paper towels.", timer: 300, icon: "🔥" },
+      { title: "Serve", instruction: "Serve hot in flatbread with tomato, parsley, tahini sauce, and pickles. The contrast of crispy exterior and bright green interior is what makes taameya special.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#0a1a08", accentColor: "#365314", custom: false,
+  },
+  {
+    id: 7, name: "Hawawshi", emoji: "🥙", category: "Egyptian",
+    time: 40, difficulty: "Easy", rating: 4.8, calories: 520, servings: 4,
+    tags: ["Egyptian", "Street Food", "Meat"],
+    description: "Crispy baked flatbread stuffed with spiced minced meat and onions — Alexandria's answer to the meat pie.",
+    ingredients: [
+      { id: 1, name: "Egyptian flatbread (aish baladi)", amount: "4 loaves", checked: false },
+      { id: 2, name: "Ground beef or lamb", amount: "500g", checked: false },
+      { id: 3, name: "Onion, finely diced", amount: "2 large", checked: false },
+      { id: 4, name: "Fresh parsley, chopped", amount: "½ cup", checked: false },
+      { id: 5, name: "Green chilies, chopped", amount: "2", checked: false },
+      { id: 6, name: "Cumin", amount: "1 tsp", checked: false },
+      { id: 7, name: "Coriander", amount: "1 tsp", checked: false },
+      { id: 8, name: "Black pepper", amount: "1 tsp", checked: false },
+      { id: 9, name: "Cinnamon", amount: "½ tsp", checked: false },
+      { id: 10, name: "Oil or ghee", amount: "2 tbsp", checked: false },
+    ],
+    steps: [
+      { title: "Make the Filling", instruction: "Combine raw minced meat with all finely diced onion, parsley, green chili, and all spices. Mix very well by hand — the mixture should be cohesive. Season generously with salt.", timer: 0, icon: "🥩" },
+      { title: "Stuff the Bread", instruction: "Carefully open each flatbread from one side to create a pocket. Stuff generously with the meat mixture, spreading it evenly all the way to the edges. Press the bread closed.", timer: 0, icon: "🫓" },
+      { title: "Brush with Oil", instruction: "Brush both sides of the stuffed bread lightly with oil or ghee. This helps create that characteristic golden crispy exterior.", timer: 0, icon: "🫙" },
+      { title: "Bake or Pan-Cook", instruction: "Place on a hot baking tray in a 220°C oven and bake for 15–20 minutes, flipping halfway, until the bread is golden and crispy and the meat inside is fully cooked. Alternatively pan-fry on medium-high for 5 min per side.", timer: 1200, icon: "🔥" },
+      { title: "Serve", instruction: "Cut into quarters and serve immediately while hot and crispy. Serve with tahini, pickles, and fresh salad.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a0d08", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 8, name: "Roz Bel Laban", emoji: "🍮", category: "Egyptian",
+    time: 45, difficulty: "Easy", rating: 4.9, calories: 320, servings: 6,
+    tags: ["Egyptian", "Dessert", "Creamy"],
+    description: "Egyptian rice pudding — silky, rose-scented, and gently sweet. Served warm or cold, it's the ultimate comfort dessert.",
+    ingredients: [
+      { id: 1, name: "Short grain rice", amount: "½ cup", checked: false },
+      { id: 2, name: "Whole milk", amount: "1 L", checked: false },
+      { id: 3, name: "Sugar", amount: "5 tbsp", checked: false },
+      { id: 4, name: "Cornstarch", amount: "2 tbsp", checked: false },
+      { id: 5, name: "Rose water", amount: "2 tbsp", checked: false },
+      { id: 6, name: "Vanilla extract", amount: "1 tsp", checked: false },
+      { id: 7, name: "Cinnamon, for serving", amount: "to taste", checked: false },
+      { id: 8, name: "Crushed pistachios", amount: "for garnish", checked: false },
+    ],
+    steps: [
+      { title: "Cook the Rice", instruction: "Wash the rice and cook in 1 cup of water over low heat until water is absorbed and rice is just tender, about 15 minutes.", timer: 900, icon: "🍚" },
+      { title: "Add Milk and Simmer", instruction: "Pour the milk over the cooked rice. Bring to a gentle simmer over medium heat, stirring frequently to prevent sticking on the bottom, for 20 minutes until the mixture thickens.", timer: 1200, icon: "🥛" },
+      { title: "Thicken with Cornstarch", instruction: "Mix cornstarch with 3 tbsp cold water until smooth. Pour into the simmering pudding while stirring constantly. Cook for 3 more minutes until thickened to a creamy consistency.", timer: 180, icon: "🥄" },
+      { title: "Flavor and Serve", instruction: "Remove from heat. Stir in sugar, rose water, and vanilla. Pour into individual serving bowls. Dust with cinnamon and scatter crushed pistachios. Serve warm or chill for 2 hours for cold pudding.", timer: 0, icon: "🌹" },
+    ],
+    bgColor: "#120e08", accentColor: "#78350f", custom: false,
+  },
+  {
+    id: 9, name: "Basbousa", emoji: "🟡", category: "Baking",
+    time: 45, difficulty: "Easy", rating: 4.9, calories: 380, servings: 12,
+    tags: ["Egyptian", "Dessert", "Baking"],
+    description: "A semolina cake soaked in simple syrup with a hint of coconut — dense, moist, and fragrant. A classic Egyptian sweet.",
+    ingredients: [
+      { id: 1, name: "Fine semolina", amount: "2 cups", checked: false },
+      { id: 2, name: "Desiccated coconut", amount: "½ cup", checked: false },
+      { id: 3, name: "Sugar", amount: "¾ cup", checked: false },
+      { id: 4, name: "Plain yogurt", amount: "1 cup", checked: false },
+      { id: 5, name: "Butter, melted", amount: "100g", checked: false },
+      { id: 6, name: "Baking powder", amount: "1 tsp", checked: false },
+      { id: 7, name: "Vanilla extract", amount: "1 tsp", checked: false },
+      { id: 8, name: "Whole blanched almonds", amount: "24 (for topping)", checked: false },
+      { id: 9, name: "Water (for syrup)", amount: "1 cup", checked: false },
+      { id: 10, name: "Sugar (for syrup)", amount: "1 cup", checked: false },
+      { id: 11, name: "Rose water (for syrup)", amount: "1 tbsp", checked: false },
+      { id: 12, name: "Lemon juice (for syrup)", amount: "1 tsp", checked: false },
+    ],
+    steps: [
+      { title: "Preheat & Prepare Pan", instruction: "Preheat oven to 180°C (350°F). Grease a 9×13 inch baking pan with butter.", timer: 600, icon: "🔥" },
+      { title: "Mix the Batter", instruction: "In a large bowl, mix semolina, coconut, sugar, yogurt, melted butter, baking powder, and vanilla. Stir well until combined into a thick batter. Let it rest for 10 minutes so the semolina absorbs the moisture.", timer: 600, icon: "🥣" },
+      { title: "Bake", instruction: "Spread the batter evenly in the greased pan. Score the top into diamond or square shapes. Press one almond into the center of each diamond. Bake for 25–30 minutes until golden brown on top.", timer: 1800, icon: "🫕" },
+      { title: "Make the Syrup", instruction: "While the cake bakes, combine water, sugar, and lemon juice in a saucepan. Bring to a boil and simmer for 5 minutes until slightly thickened. Remove from heat and add rose water.", timer: 300, icon: "🍯" },
+      { title: "Soak the Hot Cake", instruction: "As soon as the basbousa comes out of the oven, pour the warm syrup evenly all over it. It will sizzle and absorb. Let it sit for at least 20 minutes — the cake needs time to soak up all the syrup.", timer: 1200, icon: "🌹" },
+      { title: "Cut and Serve", instruction: "Cut along the scored lines. Serve warm or at room temperature. Basbousa keeps well at room temperature for 3 days.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a1208", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 10, name: "Kunafa", emoji: "🧇", category: "Baking",
+    time: 60, difficulty: "Hard", rating: 5.0, calories: 520, servings: 10,
+    tags: ["Egyptian", "Dessert", "Cheese"],
+    description: "The crown jewel of Middle Eastern desserts — shredded pastry filled with sweet cheese, baked golden, soaked in syrup.",
+    ingredients: [
+      { id: 1, name: "Kataifi (shredded phyllo dough)", amount: "400g", checked: false },
+      { id: 2, name: "Sweet white cheese (mozzarella or akawi)", amount: "500g", checked: false },
+      { id: 3, name: "Butter, melted", amount: "150g", checked: false },
+      { id: 4, name: "Sugar (for syrup)", amount: "2 cups", checked: false },
+      { id: 5, name: "Water (for syrup)", amount: "1 cup", checked: false },
+      { id: 6, name: "Rose water (for syrup)", amount: "2 tbsp", checked: false },
+      { id: 7, name: "Lemon juice", amount: "1 tsp", checked: false },
+      { id: 8, name: "Crushed pistachios (for garnish)", amount: "½ cup", checked: false },
+    ],
+    steps: [
+      { title: "Make the Syrup First", instruction: "Combine sugar, water, and lemon juice in a saucepan. Bring to a boil then simmer for 10 minutes until slightly syrupy. Add rose water, stir, and set aside to cool. The syrup must be at room temperature when the kunafa is hot.", timer: 600, icon: "🍯" },
+      { title: "Prepare the Pastry", instruction: "If the kataifi is in long strands, chop it roughly with scissors into 2cm lengths. Place in a large bowl and pour all the melted butter over it. Mix very well with your hands so every strand is coated in butter.", timer: 0, icon: "🥐" },
+      { title: "Layer in Pan", instruction: "Press half the buttered kataifi firmly into the bottom of a 30cm round oven-safe pan (or skillet). Press firmly and evenly — this is the base layer.", timer: 0, icon: "🫕" },
+      { title: "Add the Cheese", instruction: "Spread the cheese evenly over the kataifi layer, leaving a 1cm border from the edge. If using mozzarella, slice or shred it thinly.", timer: 0, icon: "🧀" },
+      { title: "Top Layer & Bake", instruction: "Cover the cheese with the remaining kataifi, pressing it down firmly. Bake at 200°C for 25–30 minutes until the top is deep golden and crispy.", timer: 1800, icon: "🔥" },
+      { title: "Flip, Soak & Serve", instruction: "Remove from oven. Place a large plate on top of the pan and carefully flip it. Immediately pour the cold syrup all over the hot kunafa. Garnish with crushed pistachios. Serve hot while the cheese is still melted.", timer: 0, icon: "✨" },
+    ],
+    bgColor: "#1a0e08", accentColor: "#9a3412", custom: false,
+  },
+  {
+    id: 11, name: "Bamia", emoji: "🟢", category: "Egyptian",
+    time: 50, difficulty: "Easy", rating: 4.6, calories: 260, servings: 4,
+    tags: ["Egyptian", "Stew", "Lamb"],
+    description: "A rich, tangy stew of okra and tender lamb cooked with tomatoes and spices — best eaten over rice.",
+    ingredients: [
+      { id: 1, name: "Baby okra (bamia)", amount: "500g", checked: false },
+      { id: 2, name: "Lamb chunks", amount: "400g", checked: false },
+      { id: 3, name: "Crushed tomatoes", amount: "400g can", checked: false },
+      { id: 4, name: "Tomato paste", amount: "2 tbsp", checked: false },
+      { id: 5, name: "Garlic cloves", amount: "5, minced", checked: false },
+      { id: 6, name: "Onion", amount: "1 large, diced", checked: false },
+      { id: 7, name: "Lemon juice", amount: "2 tbsp", checked: false },
+      { id: 8, name: "Cumin", amount: "1 tsp", checked: false },
+      { id: 9, name: "Coriander", amount: "1 tsp", checked: false },
+      { id: 10, name: "Oil", amount: "3 tbsp", checked: false },
+    ],
+    steps: [
+      { title: "Brown the Lamb", instruction: "Season lamb with salt and pepper. Heat oil in a pot and brown lamb in batches over high heat, about 3 minutes per side. Remove and set aside.", timer: 360, icon: "🥩" },
+      { title: "Sauté Aromatics", instruction: "In the same pot, cook onion for 5 minutes until soft. Add garlic and cook 1 more minute. Add tomato paste and stir for 2 minutes.", timer: 480, icon: "🧅" },
+      { title: "Simmer the Lamb", instruction: "Return lamb to pot. Add crushed tomatoes, cumin, coriander, salt, and 1 cup water. Bring to a boil, then simmer covered for 25 minutes until lamb is tender.", timer: 1500, icon: "🍅" },
+      { title: "Add the Okra", instruction: "Trim okra tops if needed. Add to the pot along with lemon juice. Stir gently — don't break the okra. Simmer uncovered for 15 more minutes until okra is tender but still has some bite.", timer: 900, icon: "🟢" },
+      { title: "Serve", instruction: "Taste and adjust seasoning. Serve over white rice, with a squeeze of fresh lemon.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#0a1a0a", accentColor: "#14532d", custom: false,
+  },
+  {
+    id: 12, name: "Shorbet Ads", emoji: "🍲", category: "Egyptian",
+    time: 35, difficulty: "Easy", rating: 4.8, calories: 220, servings: 6,
+    tags: ["Egyptian", "Soup", "Vegetarian"],
+    description: "Velvety Egyptian red lentil soup spiced with cumin and lemon — warming, wholesome, and ready in under 40 minutes.",
+    ingredients: [
+      { id: 1, name: "Red lentils", amount: "2 cups", checked: false },
+      { id: 2, name: "Onion", amount: "2 large, diced", checked: false },
+      { id: 3, name: "Garlic cloves", amount: "4, minced", checked: false },
+      { id: 4, name: "Carrots", amount: "2, chopped", checked: false },
+      { id: 5, name: "Cumin", amount: "2 tsp", checked: false },
+      { id: 6, name: "Turmeric", amount: "½ tsp", checked: false },
+      { id: 7, name: "Olive oil", amount: "3 tbsp", checked: false },
+      { id: 8, name: "Lemon juice", amount: "3 tbsp", checked: false },
+      { id: 9, name: "Vegetable stock or water", amount: "1.5 L", checked: false },
+      { id: 10, name: "Crispy fried onions for topping", amount: "½ cup", checked: false },
+    ],
+    steps: [
+      { title: "Sauté the Base", instruction: "Heat olive oil in a large pot. Cook onion for 7 minutes until golden. Add garlic, carrots, cumin, and turmeric. Stir and cook for 2 more minutes.", timer: 540, icon: "🧅" },
+      { title: "Cook the Lentils", instruction: "Add washed lentils and stock. Bring to a boil, skim off any foam, then simmer for 20 minutes until lentils are completely soft and breaking apart.", timer: 1200, icon: "🫘" },
+      { title: "Blend Until Smooth", instruction: "Use an immersion blender to purée the soup until completely smooth and velvety. If too thick, add hot water. Season with salt and lemon juice.", timer: 0, icon: "🌀" },
+      { title: "Serve", instruction: "Ladle into bowls. Top with crispy fried onions and a drizzle of olive oil. Serve with flatbread for dipping.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a0e08", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 13, name: "Macarona Bechamel", emoji: "🧁", category: "Egyptian",
+    time: 75, difficulty: "Medium", rating: 4.9, calories: 620, servings: 8,
+    tags: ["Egyptian", "Pasta", "Comfort"],
+    description: "Egypt's version of pasta bake — penne layered with spiced meat sauce and a rich béchamel, baked until bubbling gold.",
+    ingredients: [
+      { id: 1, name: "Penne pasta", amount: "500g", checked: false },
+      { id: 2, name: "Ground beef", amount: "500g", checked: false },
+      { id: 3, name: "Onion, diced", amount: "1 large", checked: false },
+      { id: 4, name: "Tomato paste", amount: "3 tbsp", checked: false },
+      { id: 5, name: "Cinnamon", amount: "1 tsp", checked: false },
+      { id: 6, name: "Allspice", amount: "½ tsp", checked: false },
+      { id: 7, name: "Butter (for béchamel)", amount: "80g", checked: false },
+      { id: 8, name: "All-purpose flour (for béchamel)", amount: "80g", checked: false },
+      { id: 9, name: "Whole milk (for béchamel)", amount: "1 L", checked: false },
+      { id: 10, name: "Egg", amount: "2 (for béchamel)", checked: false },
+      { id: 11, name: "Nutmeg", amount: "pinch", checked: false },
+    ],
+    steps: [
+      { title: "Cook the Pasta", instruction: "Cook penne in heavily salted boiling water until al dente (1 min before package directions). Drain, toss with a little oil to prevent sticking.", timer: 600, icon: "🍝" },
+      { title: "Make the Meat Sauce", instruction: "Brown ground beef in a pan. Add onion and cook until soft. Add tomato paste, cinnamon, allspice, salt, and pepper. Cook for 10 minutes, stirring well.", timer: 600, icon: "🥩" },
+      { title: "Make the Béchamel", instruction: "Melt butter in a saucepan. Whisk in flour and cook for 2 minutes. Gradually pour in warm milk while whisking constantly to avoid lumps. Simmer for 5 minutes until thick. Season with nutmeg and salt. Off heat, whisk in the eggs quickly.", timer: 420, icon: "🥛" },
+      { title: "Assemble", instruction: "Preheat oven to 190°C. Mix pasta with half the béchamel. Layer half the pasta in a greased baking dish. Spread the meat sauce evenly. Add remaining pasta. Pour the rest of the béchamel over the top, spreading evenly.", timer: 600, icon: "🫕" },
+      { title: "Bake Until Golden", instruction: "Bake for 30–35 minutes until the top is deeply golden brown and the dish is bubbling at the edges.", timer: 2100, icon: "🔥" },
+      { title: "Rest and Serve", instruction: "Let rest for 10 minutes before cutting — this helps it hold together. Slice into squares and serve.", timer: 600, icon: "🍽️" },
+    ],
+    bgColor: "#120e08", accentColor: "#78350f", custom: false,
+  },
+  {
+    id: 14, name: "Feteer Meshaltet", emoji: "🥞", category: "Baking",
+    time: 90, difficulty: "Hard", rating: 4.9, calories: 480, servings: 8,
+    tags: ["Egyptian", "Pastry", "Breakfast"],
+    description: "Egypt's iconic flaky layered pastry — made by folding and stretching dough with ghee until impossibly thin. Served sweet or savory.",
+    ingredients: [
+      { id: 1, name: "All-purpose flour", amount: "4 cups", checked: false },
+      { id: 2, name: "Salt", amount: "1 tsp", checked: false },
+      { id: 3, name: "Water (warm)", amount: "1.5 cups", checked: false },
+      { id: 4, name: "Ghee or clarified butter", amount: "200g", checked: false },
+      { id: 5, name: "Honey or cream cheese (for serving)", amount: "as desired", checked: false },
+    ],
+    steps: [
+      { title: "Make the Dough", instruction: "Mix flour and salt. Gradually add warm water, kneading for 8–10 minutes until you have a very soft, smooth, almost sticky dough. Cover and rest for 30 minutes.", timer: 1800, icon: "🫓" },
+      { title: "Divide and Rest", instruction: "Divide dough into 8 equal balls. Cover with a damp cloth and rest another 15 minutes.", timer: 900, icon: "⏳" },
+      { title: "Stretch the Dough", instruction: "On a lightly oiled surface, take one ball and stretch it as thin as possible using your hands — stretching and pulling from the edges until nearly translucent. This takes patience!", timer: 0, icon: "👐" },
+      { title: "Fold with Ghee", instruction: "Brush the stretched sheet generously with melted ghee. Fold it into thirds (like a letter), brush again with ghee, fold in thirds again the other way to form a small packet. Repeat with all balls.", timer: 0, icon: "🧈" },
+      { title: "Bake", instruction: "Stack 2–3 packets together on a lightly oiled baking sheet. Gently press together. Bake at 200°C for 20–25 minutes until golden brown and puffed.", timer: 1500, icon: "🔥" },
+      { title: "Serve", instruction: "Serve immediately while hot — tear apart at the layers. Eat with honey, cream, jam, or savory cheese. The flaky layers should separate beautifully.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a1208", accentColor: "#78350f", custom: false,
+  },
+  {
+    id: 15, name: "Om Ali", emoji: "🥧", category: "Baking",
+    time: 40, difficulty: "Easy", rating: 4.9, calories: 560, servings: 8,
+    tags: ["Egyptian", "Dessert", "Baking"],
+    description: "Egypt's legendary bread pudding — layers of crispy pastry, cream, milk, and nuts baked until bubbling and golden.",
+    ingredients: [
+      { id: 1, name: "Puff pastry or feteer, baked crispy", amount: "400g", checked: false },
+      { id: 2, name: "Whole milk", amount: "500ml", checked: false },
+      { id: 3, name: "Heavy cream", amount: "500ml", checked: false },
+      { id: 4, name: "Sugar", amount: "6 tbsp", checked: false },
+      { id: 5, name: "Mixed nuts (almonds, pistachios, pine nuts)", amount: "1 cup", checked: false },
+      { id: 6, name: "Desiccated coconut", amount: "½ cup", checked: false },
+      { id: 7, name: "Raisins", amount: "¼ cup", checked: false },
+      { id: 8, name: "Vanilla extract", amount: "1 tsp", checked: false },
+    ],
+    steps: [
+      { title: "Break Up the Pastry", instruction: "Break the baked crispy pastry into rough 3–4cm pieces. It should be very crispy — if using puff pastry, bake it at 200°C for 15 minutes first until very golden.", timer: 900, icon: "🥐" },
+      { title: "Prepare the Milk Mixture", instruction: "Warm milk and cream together in a saucepan. Add sugar and vanilla. Stir until sugar dissolves. Don't boil.", timer: 300, icon: "🥛" },
+      { title: "Layer in Baking Dish", instruction: "Spread broken pastry pieces in a deep baking dish. Scatter nuts, coconut, and raisins over and between the pastry pieces.", timer: 0, icon: "🫕" },
+      { title: "Pour and Soak", instruction: "Pour the warm cream mixture evenly over the pastry. Let it sit for 5 minutes so the pastry absorbs the liquid.", timer: 300, icon: "🍯" },
+      { title: "Bake Until Bubbling and Golden", instruction: "Bake at 190°C for 20–25 minutes until the top is golden brown and the cream is bubbling around the edges. The top should be lightly caramelized.", timer: 1500, icon: "🔥" },
+      { title: "Serve Hot", instruction: "Serve immediately straight from the dish — Om Ali must be eaten hot. Spoon it into deep bowls and eat while the cream is still bubbling.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#120e08", accentColor: "#78350f", custom: false,
+  },
+  {
+    id: 16, name: "Sayadeya", emoji: "🐟", category: "Egyptian",
+    time: 55, difficulty: "Medium", rating: 4.7, calories: 420, servings: 4,
+    tags: ["Egyptian", "Seafood", "Rice"],
+    description: "Alexandria's famous fisherman's dish — rice cooked in a rich caramelized onion and fish broth, topped with fried fish.",
+    ingredients: [
+      { id: 1, name: "White fish fillets (sea bass, grouper)", amount: "800g", checked: false },
+      { id: 2, name: "Long grain rice", amount: "2 cups", checked: false },
+      { id: 3, name: "Onions, thinly sliced", amount: "3 large", checked: false },
+      { id: 4, name: "Garlic cloves", amount: "5", checked: false },
+      { id: 5, name: "Cumin", amount: "2 tsp", checked: false },
+      { id: 6, name: "Coriander powder", amount: "1 tsp", checked: false },
+      { id: 7, name: "Turmeric", amount: "½ tsp", checked: false },
+      { id: 8, name: "Bay leaves", amount: "2", checked: false },
+      { id: 9, name: "Lemon juice", amount: "3 tbsp", checked: false },
+      { id: 10, name: "Oil for frying", amount: "4 tbsp", checked: false },
+    ],
+    steps: [
+      { title: "Fry the Fish", instruction: "Season fish fillets with cumin, coriander, turmeric, salt, and lemon juice. Heat oil and fry fish for 3–4 minutes per side until golden. Remove and set aside, reserving the flavorful cooking oil.", timer: 480, icon: "🐟" },
+      { title: "Caramelize the Onions", instruction: "In the same pan, cook onions over medium heat for 20 minutes, stirring regularly, until they turn deeply golden brown and caramelized. This is the key to the dish's flavor.", timer: 1200, icon: "🧅" },
+      { title: "Make the Fish Stock", instruction: "Add garlic to the onions and cook 1 minute. Add 4 cups hot water, bay leaves, salt, and a pinch of cumin. Simmer for 10 minutes. Strain, reserving the fragrant broth.", timer: 600, icon: "🫕" },
+      { title: "Cook the Rice in the Broth", instruction: "Bring 3.5 cups of the reserved broth to a boil. Add the washed rice, salt, and a pinch of turmeric. Cook covered on the lowest heat for 18 minutes until rice is fluffy and all broth is absorbed.", timer: 1080, icon: "🍚" },
+      { title: "Assemble and Serve", instruction: "Plate the rice, top with the fried fish fillets. Garnish with the remaining caramelized onions and a squeeze of lemon. Serve with tahini on the side.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#0d1a1a", accentColor: "#0f4c4c", custom: false,
+  },
+  {
+    id: 17, name: "Alexandrian Liver", emoji: "🥘", category: "Egyptian",
+    time: 20, difficulty: "Easy", rating: 4.6, calories: 310, servings: 3,
+    tags: ["Egyptian", "Street Food", "Quick"],
+    description: "Spicy, tangy liver sautéed with peppers and chilies — a beloved Alexandrian street food sandwich filling.",
+    ingredients: [
+      { id: 1, name: "Beef liver, cut into cubes", amount: "500g", checked: false },
+      { id: 2, name: "Green bell pepper, sliced", amount: "1", checked: false },
+      { id: 3, name: "Hot green chilies, sliced", amount: "3", checked: false },
+      { id: 4, name: "Garlic cloves, sliced", amount: "4", checked: false },
+      { id: 5, name: "Lemon juice", amount: "2 tbsp", checked: false },
+      { id: 6, name: "Cumin", amount: "1 tsp", checked: false },
+      { id: 7, name: "Oil", amount: "3 tbsp", checked: false },
+      { id: 8, name: "Salt and pepper", amount: "to taste", checked: false },
+    ],
+    steps: [
+      { title: "Prep the Liver", instruction: "Rinse liver cubes and pat dry. Season with cumin, salt, and pepper. Let sit for 5 minutes.", timer: 300, icon: "🥩" },
+      { title: "Sear the Liver", instruction: "Heat oil in a very hot pan or wok. Add liver and sear without stirring for 1 minute. Then stir-fry on high heat for 2–3 minutes. Liver cooks fast — don't overcook or it becomes tough.", timer: 240, icon: "🔥" },
+      { title: "Add Peppers and Garlic", instruction: "Add bell pepper, chilies, and garlic. Stir-fry for 2 more minutes on high heat until peppers are slightly charred.", timer: 120, icon: "🌶️" },
+      { title: "Finish and Serve", instruction: "Add lemon juice, toss, and remove from heat immediately. Serve in flatbread as a sandwich or on its own with bread.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a0808", accentColor: "#7c2d12", custom: false,
+  },
+  {
+    id: 18, name: "Feseekh & Ringa", emoji: "🐠", category: "Egyptian",
+    time: 10, difficulty: "Easy", rating: 4.2, calories: 180, servings: 4,
+    tags: ["Egyptian", "Traditional", "Sham el-Nessim"],
+    description: "Fermented and smoked fish — a centuries-old Egyptian tradition eaten on Sham el-Nessim (spring festival) with onions and bread.",
+    ingredients: [
+      { id: 1, name: "Ringa (smoked herring) fillets", amount: "4 fillets", checked: false },
+      { id: 2, name: "Spring onions, sliced", amount: "4", checked: false },
+      { id: 3, name: "Lemon, sliced", amount: "2", checked: false },
+      { id: 4, name: "Flatbread", amount: "for serving", checked: false },
+      { id: 5, name: "Fresh parsley", amount: "handful", checked: false },
+      { id: 6, name: "Green chilies", amount: "2 (optional)", checked: false },
+    ],
+    steps: [
+      { title: "Prepare the Fish", instruction: "Ringa is served as-is — it is a smoked, preserved fish. Remove from packaging and separate into pieces if needed. Note: Always buy ringa from a trusted source, as it is cured fish.", timer: 0, icon: "🐠" },
+      { title: "Arrange the Spread", instruction: "Lay the ringa fillets on a serving plate. Arrange spring onions, parsley, lemon slices, and chilies around them.", timer: 0, icon: "🍽️" },
+      { title: "Serve Traditionally", instruction: "Eat with flatbread — tear pieces of bread and use them to scoop the fish with onion and a squeeze of lemon. This is the traditional Sham el-Nessim meal shared with family.", timer: 0, icon: "🌸" },
+    ],
+    bgColor: "#0d1a1a", accentColor: "#0f4c4c", custom: false,
+  },
+  {
+    id: 19, name: "Mombar", emoji: "🌭", category: "Egyptian",
+    time: 70, difficulty: "Hard", rating: 4.5, calories: 480, servings: 6,
+    tags: ["Egyptian", "Traditional", "Stuffed"],
+    description: "Egyptian stuffed intestine sausage filled with spiced rice and herbs — a beloved traditional dish.",
+    ingredients: [
+      { id: 1, name: "Cleaned sheep intestine casings", amount: "1 meter", checked: false },
+      { id: 2, name: "Short grain rice (uncooked)", amount: "2 cups", checked: false },
+      { id: 3, name: "Minced meat (optional)", amount: "150g", checked: false },
+      { id: 4, name: "Parsley, finely chopped", amount: "½ cup", checked: false },
+      { id: 5, name: "Dill, chopped", amount: "¼ cup", checked: false },
+      { id: 6, name: "Onion, grated", amount: "1", checked: false },
+      { id: 7, name: "Oil", amount: "4 tbsp", checked: false },
+      { id: 8, name: "Tomato paste", amount: "2 tbsp", checked: false },
+      { id: 9, name: "Cumin and allspice", amount: "1 tsp each", checked: false },
+    ],
+    steps: [
+      { title: "Make the Stuffing", instruction: "Mix uncooked rice with parsley, dill, grated onion, minced meat (if using), oil, tomato paste, cumin, allspice, salt, and pepper. This is the stuffing.", timer: 0, icon: "🌾" },
+      { title: "Clean the Casings", instruction: "Rinse intestine casings thoroughly inside and out under cold running water multiple times. Soak in salted water for 15 minutes.", timer: 900, icon: "💧" },
+      { title: "Stuff the Casing", instruction: "Tie one end of the casing with string. Use a funnel or your fingers to fill the casing with the rice stuffing. Fill only ¾ full — rice expands during cooking. Tie the other end securely. Prick lightly with a needle in a few places.", timer: 0, icon: "🌭" },
+      { title: "Cook in Tomato Broth", instruction: "Place in a pot. Cover with a tomato-flavored broth (water + 2 tbsp tomato paste + salt). Bring to a boil, then simmer on low for 45 minutes until rice is fully cooked.", timer: 2700, icon: "🍅" },
+      { title: "Brown and Serve", instruction: "Remove mombar from the broth. Slice into thick rounds and fry in a little oil for 2–3 minutes per side until golden. Serve with the cooking broth as a dipping sauce.", timer: 180, icon: "🔥" },
+    ],
+    bgColor: "#1a0d08", accentColor: "#7c2d12", custom: false,
+  },
+  // ─── BAKING RECIPES ─────────────────────────────────────────────────────────
+  {
+    id: 20, name: "Classic Banana Bread", emoji: "🍌", category: "Baking",
+    time: 65, difficulty: "Easy", rating: 4.8, calories: 280, servings: 10,
+    tags: ["Baking", "Breakfast", "Snack"],
+    description: "Moist, tender banana bread packed with flavor — the perfect way to use overripe bananas.",
+    ingredients: [
+      { id: 1, name: "Overripe bananas", amount: "3 large", checked: false },
+      { id: 2, name: "All-purpose flour", amount: "1.5 cups", checked: false },
+      { id: 3, name: "Sugar", amount: "¾ cup", checked: false },
+      { id: 4, name: "Butter, melted", amount: "80g", checked: false },
+      { id: 5, name: "Eggs", amount: "2 large", checked: false },
+      { id: 6, name: "Baking soda", amount: "1 tsp", checked: false },
+      { id: 7, name: "Salt", amount: "¼ tsp", checked: false },
+      { id: 8, name: "Vanilla extract", amount: "1 tsp", checked: false },
+      { id: 9, name: "Chocolate chips (optional)", amount: "½ cup", checked: false },
+    ],
+    steps: [
+      { title: "Preheat Oven", instruction: "Preheat oven to 175°C (350°F). Grease a 9×5 inch loaf pan well.", timer: 600, icon: "🔥" },
+      { title: "Mash Bananas", instruction: "In a large bowl, mash bananas with a fork until smooth. A few small lumps are fine — they add texture.", timer: 0, icon: "🍌" },
+      { title: "Mix Wet Ingredients", instruction: "Add melted butter, sugar, beaten eggs, and vanilla to the mashed bananas. Mix until combined.", timer: 0, icon: "🥣" },
+      { title: "Add Dry Ingredients", instruction: "Sprinkle baking soda and salt over the mixture. Add flour and fold gently just until no dry flour remains. Do not overmix — this keeps the bread tender.", timer: 0, icon: "🌾" },
+      { title: "Bake", instruction: "Pour batter into the loaf pan. Bake for 55–60 minutes until a toothpick inserted in the center comes out clean. If the top browns too quickly, tent with foil.", timer: 3600, icon: "⏳" },
+      { title: "Cool and Serve", instruction: "Cool in the pan for 10 minutes, then turn out onto a rack. Cool completely before slicing — this helps the texture set.", timer: 600, icon: "🍞" },
+    ],
+    bgColor: "#1a1208", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 21, name: "Chocolate Lava Cake", emoji: "🍫", category: "Baking",
+    time: 25, difficulty: "Medium", rating: 4.9, calories: 380, servings: 4,
+    tags: ["Baking", "Dessert", "Chocolate"],
+    description: "Individual warm chocolate cakes with a molten center — elegant yet surprisingly simple to make.",
+    ingredients: [
+      { id: 1, name: "Dark chocolate (70%)", amount: "150g", checked: false },
+      { id: 2, name: "Butter", amount: "100g", checked: false },
+      { id: 3, name: "Eggs", amount: "4 large", checked: false },
+      { id: 4, name: "Sugar", amount: "80g", checked: false },
+      { id: 5, name: "All-purpose flour", amount: "3 tbsp", checked: false },
+      { id: 6, name: "Cocoa powder", amount: "1 tbsp", checked: false },
+      { id: 7, name: "Salt", amount: "pinch", checked: false },
+      { id: 8, name: "Vanilla extract", amount: "½ tsp", checked: false },
+    ],
+    steps: [
+      { title: "Prep Ramekins and Preheat", instruction: "Preheat oven to 220°C (425°F). Generously butter 4 individual ramekins and dust with cocoa powder — tap out any excess. This ensures the cakes release cleanly.", timer: 600, icon: "🔥" },
+      { title: "Melt Chocolate", instruction: "Melt chocolate and butter together in a heatproof bowl set over simmering water, or in the microwave in 30-second bursts. Stir until smooth and glossy. Cool slightly.", timer: 300, icon: "🍫" },
+      { title: "Whisk Eggs and Sugar", instruction: "In another bowl, whisk eggs, egg yolks, and sugar vigorously for 2–3 minutes until the mixture is pale, creamy, and slightly ribbony.", timer: 180, icon: "🥚" },
+      { title: "Combine and Fold", instruction: "Pour the chocolate mixture into the egg mixture. Fold gently. Sift flour and salt over the top and fold in just until no streaks remain.", timer: 0, icon: "🥄" },
+      { title: "Bake for Exactly 10–12 Minutes", instruction: "Divide batter among the ramekins. Bake for exactly 10–12 minutes. The edges should be set but the center should jiggle slightly when you shake the ramekin.", timer: 720, icon: "⏱" },
+      { title: "Unmold and Serve Immediately", instruction: "Run a knife around the edges. Invert onto a plate and let it sit for 10 seconds, then lift the ramekin. Serve immediately with vanilla ice cream.", timer: 0, icon: "✨" },
+    ],
+    bgColor: "#0e0808", accentColor: "#7c1d1d", custom: false,
+  },
+  // ─── AIR FRYER RECIPES ───────────────────────────────────────────────────────
+  {
+    id: 22, name: "Air Fryer Crispy Chicken Wings", emoji: "🍗", category: "Air Fryer",
+    time: 35, difficulty: "Easy", rating: 4.9, calories: 360, servings: 4,
+    tags: ["Air Fryer", "Chicken", "Crispy"],
+    description: "Ultra-crispy chicken wings with no oil needed — all the crunch with none of the guilt.",
+    ingredients: [
+      { id: 1, name: "Chicken wings", amount: "1 kg", checked: false },
+      { id: 2, name: "Baking powder", amount: "1 tbsp", checked: false },
+      { id: 3, name: "Salt", amount: "1 tsp", checked: false },
+      { id: 4, name: "Garlic powder", amount: "1 tsp", checked: false },
+      { id: 5, name: "Paprika", amount: "1 tsp", checked: false },
+      { id: 6, name: "Black pepper", amount: "½ tsp", checked: false },
+      { id: 7, name: "Sauce of choice (buffalo, BBQ, etc.)", amount: "½ cup", checked: false },
+    ],
+    steps: [
+      { title: "Pat Dry and Season", instruction: "Pat wings completely dry with paper towels — moisture is the enemy of crispy skin. Toss with baking powder, salt, garlic powder, paprika, and pepper. The baking powder draws out moisture and creates crunch.", timer: 0, icon: "🍗" },
+      { title: "Preheat Air Fryer", instruction: "Preheat air fryer to 200°C (390°F) for 5 minutes.", timer: 300, icon: "🌀" },
+      { title: "First Cook at Lower Heat", instruction: "Place wings in the air fryer basket in a single layer (cook in batches if needed). Cook at 180°C for 15 minutes, flipping halfway. This renders the fat.", timer: 900, icon: "⏱" },
+      { title: "Blast at High Heat", instruction: "Increase temperature to 210°C and cook for another 5–7 minutes until deeply golden and audibly crispy. You should be able to hear them sizzle when you open the drawer.", timer: 420, icon: "🔥" },
+      { title: "Toss in Sauce and Serve", instruction: "Toss hot wings in your sauce immediately. Serve right away with ranch or blue cheese dip and celery sticks.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#1a0d08", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 23, name: "Air Fryer Basbousa", emoji: "🟡", category: "Air Fryer",
+    time: 25, difficulty: "Easy", rating: 4.7, calories: 320, servings: 6,
+    tags: ["Air Fryer", "Egyptian", "Dessert", "Fast Bake"],
+    description: "Your favourite Egyptian basbousa — made fast in the air fryer! Same gorgeous result, ready in half the time.",
+    ingredients: [
+      { id: 1, name: "Fine semolina", amount: "1 cup", checked: false },
+      { id: 2, name: "Sugar", amount: "⅓ cup", checked: false },
+      { id: 3, name: "Plain yogurt", amount: "½ cup", checked: false },
+      { id: 4, name: "Butter, melted", amount: "50g", checked: false },
+      { id: 5, name: "Coconut", amount: "¼ cup", checked: false },
+      { id: 6, name: "Baking powder", amount: "½ tsp", checked: false },
+      { id: 7, name: "Almonds for topping", amount: "12", checked: false },
+      { id: 8, name: "Simple syrup with rose water", amount: "½ cup", checked: false },
+    ],
+    steps: [
+      { title: "Mix the Batter", instruction: "Mix semolina, sugar, yogurt, melted butter, coconut, and baking powder together in a bowl. Rest for 10 minutes.", timer: 600, icon: "🥣" },
+      { title: "Prepare Air Fryer Pan", instruction: "Line a small round or square pan that fits in your air fryer with baking paper. Grease well. Press batter in evenly.", timer: 0, icon: "🫕" },
+      { title: "Score and Top with Almonds", instruction: "Score the top into diamond shapes. Press one almond into each diamond center.", timer: 0, icon: "🟡" },
+      { title: "Air Fry", instruction: "Air fry at 160°C for 15–18 minutes until the top is golden brown and a skewer comes out clean.", timer: 1080, icon: "🌀" },
+      { title: "Soak with Syrup", instruction: "Immediately pour warm rose water syrup over the hot basbousa. Let it absorb for 15 minutes before cutting.", timer: 900, icon: "🌹" },
+    ],
+    bgColor: "#1a1208", accentColor: "#92400e", custom: false,
+  },
+  {
+    id: 24, name: "Air Fryer Crispy Falafel", emoji: "🧆", category: "Air Fryer",
+    time: 20, difficulty: "Easy", rating: 4.8, calories: 180, servings: 4,
+    tags: ["Air Fryer", "Vegetarian", "Healthy"],
+    description: "Perfectly crispy falafel with barely any oil — lighter than the deep-fried version but just as satisfying.",
+    ingredients: [
+      { id: 1, name: "Canned chickpeas, well-drained", amount: "2 × 400g cans", checked: false },
+      { id: 2, name: "Fresh parsley", amount: "½ cup", checked: false },
+      { id: 3, name: "Garlic cloves", amount: "4", checked: false },
+      { id: 4, name: "Onion", amount: "½", checked: false },
+      { id: 5, name: "Cumin", amount: "1.5 tsp", checked: false },
+      { id: 6, name: "Coriander powder", amount: "1 tsp", checked: false },
+      { id: 7, name: "All-purpose flour", amount: "3 tbsp", checked: false },
+      { id: 8, name: "Baking powder", amount: "½ tsp", checked: false },
+      { id: 9, name: "Olive oil spray", amount: "for coating", checked: false },
+    ],
+    steps: [
+      { title: "Pulse in Food Processor", instruction: "Add chickpeas, parsley, garlic, onion, cumin, coriander, salt, and pepper to a food processor. Pulse until finely ground but not smooth — the mixture should hold together but still have texture. Don't blend into hummus!", timer: 0, icon: "🫘" },
+      { title: "Add Flour and Chill", instruction: "Transfer to a bowl. Mix in flour and baking powder. Refrigerate for 30 minutes — this makes them easier to shape and helps them hold together.", timer: 1800, icon: "❄️" },
+      { title: "Shape into Balls", instruction: "Form the mixture into balls (about 2 tbsp each). Flatten slightly into thick discs. If they crack, add 1 more tbsp flour.", timer: 0, icon: "🟢" },
+      { title: "Spray and Air Fry", instruction: "Preheat air fryer to 190°C. Spray falafel generously on both sides with olive oil. Air fry for 12–14 minutes, flipping halfway, until deeply golden and crispy on the outside.", timer: 840, icon: "🌀" },
+      { title: "Serve", instruction: "Serve in pita with tahini, tomatoes, cucumber, and parsley. Best eaten immediately while hot and crispy.", timer: 0, icon: "🍽️" },
+    ],
+    bgColor: "#0a1a08", accentColor: "#365314", custom: false,
+  },
+  {
+    id: 25, name: "Air Fryer Pita Chips", emoji: "🫓", category: "Air Fryer",
+    time: 10, difficulty: "Easy", rating: 4.7, calories: 140, servings: 4,
+    tags: ["Air Fryer", "Snack", "Quick"],
+    description: "Ultra-crispy pita chips in under 10 minutes — perfect with hummus, dips, or as a light snack.",
+    ingredients: [
+      { id: 1, name: "Pita bread", amount: "4 rounds", checked: false },
+      { id: 2, name: "Olive oil", amount: "2 tbsp", checked: false },
+      { id: 3, name: "Za'atar or mixed spices", amount: "1 tbsp", checked: false },
+      { id: 4, name: "Salt", amount: "½ tsp", checked: false },
+      { id: 5, name: "Garlic powder", amount: "½ tsp", checked: false },
+    ],
+    steps: [
+      { title: "Cut the Pita", instruction: "Split each pita in half at the seam to get two thin rounds. Stack and cut into 6–8 wedges each.", timer: 0, icon: "🫓" },
+      { title: "Season", instruction: "Toss pita wedges with olive oil, za'atar (or spices), salt, and garlic powder. Make sure every piece is coated.", timer: 0, icon: "🫙" },
+      { title: "Air Fry in Batches", instruction: "Air fry at 180°C for 5–7 minutes in a single layer, shaking the basket halfway. Watch carefully — they go from golden to burnt quickly!", timer: 420, icon: "🌀" },
+      { title: "Cool and Serve", instruction: "Let cool for 2 minutes — they continue crisping as they cool. Serve with hummus, baba ganoush, or any dip.", timer: 120, icon: "🍽️" },
+    ],
+    bgColor: "#0e0e08", accentColor: "#713f12", custom: false,
+  },
+];
+
+const CATEGORIES = ["All", "Egyptian", "Baking", "Air Fryer", "Breakfast", "Lunch", "Dinner", "Dessert", "Snacks"];
+
+const INVENTORY_ITEMS_DEFAULT = [
+  { id: 1, name: "Eggs", qty: 8, unit: "pcs", expires: "2026-07-12", emoji: "🥚", category: "Dairy" },
+  { id: 2, name: "Butter", qty: 250, unit: "g", expires: "2026-07-20", emoji: "🧈", category: "Dairy" },
+  { id: 3, name: "Rice", qty: 1000, unit: "g", expires: "2027-01-01", emoji: "🌾", category: "Pantry" },
+  { id: 4, name: "Olive Oil", qty: 600, unit: "ml", expires: "2026-12-01", emoji: "🫙", category: "Pantry" },
+  { id: 5, name: "Garlic", qty: 1, unit: "head", expires: "2026-07-18", emoji: "🧄", category: "Produce" },
+  { id: 6, name: "Lentils", qty: 500, unit: "g", expires: "2027-06-01", emoji: "🫘", category: "Pantry" },
+  { id: 7, name: "Onions", qty: 5, unit: "pcs", expires: "2026-07-30", emoji: "🧅", category: "Produce" },
+  { id: 8, name: "Tomatoes", qty: 4, unit: "pcs", expires: "2026-07-14", emoji: "🍅", category: "Produce" },
+];
+
+const SHOPPING_LIST_DEFAULT = [
+  { id: 1, name: "Semolina", qty: "500g", checked: false, category: "Pantry" },
+  { id: 2, name: "Fava Beans", qty: "2 cans", checked: false, category: "Pantry" },
+  { id: 3, name: "Molokhia (frozen)", qty: "500g", checked: false, category: "Frozen" },
+  { id: 4, name: "Ground Beef", qty: "500g", checked: false, category: "Protein" },
+  { id: 5, name: "Pita Bread", qty: "1 pack", checked: true, category: "Bakery" },
+];
+
+// ─── ICONS ─────────────────────────────────────────────────────────────────────
+const Icon = ({ name, size = 20, color = "currentColor" }) => {
+  const icons = {
+    home: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline strokeLinecap="round" strokeLinejoin="round" points="9 22 9 12 15 12 15 22"/></svg>,
+    book: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+    cart: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+    box: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline strokeLinecap="round" strokeLinejoin="round" points="3.27 6.96 12 12.01 20.73 6.96"/><line strokeLinecap="round" strokeLinejoin="round" x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    bot: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 7v4M8 14h.01M12 14h.01M16 14h.01"/></svg>,
+    timer: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><circle cx="12" cy="13" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4l2 2M12 5V3M8 3h8"/></svg>,
+    chef: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6v-7.13z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>,
+    settings: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+    heart: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+    heartFill: <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+    search: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    plus: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    trash: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path strokeLinecap="round" strokeLinejoin="round" d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
+    arrow: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+    arrowLeft: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+    check: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>,
+    clock: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    send: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+    star: <svg width={size} height={size} fill={color} viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    mic: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><rect x="9" y="2" width="6" height="11" rx="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>,
+    sun: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+    cloud: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>,
+    play: <svg width={size} height={size} fill={color} viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+    pause: <svg width={size} height={size} fill={color} viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+    refresh: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path strokeLinecap="round" strokeLinejoin="round" d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+    x: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    sparkle: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l1.5 4.5L19 9l-4.5 1.5L13 15l-1.5-4.5L7 9l4.5-1.5L13 3z"/></svg>,
+    edit: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>,
+    save: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+    people: <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  };
+  return icons[name] || null;
+};
+
+// ─── HELPERS ───────────────────────────────────────────────────────────────────
+const useTime = () => {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
+  return time;
+};
+const fmtTime = (sec) => {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+};
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 5) return "Still up?"; if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon"; if (h < 21) return "Good evening";
+  return "Good night";
+};
+const getDifficultyColor = (d) => d === 'Easy' ? 'tag-green' : d === 'Medium' ? 'tag-amber' : 'tag-red';
+const getCategoryTag = (c) => c === 'Air Fryer' ? 'tag-blue' : c === 'Baking' ? 'tag-purple' : c === 'Egyptian' ? 'tag-orange' : 'tag-amber';
+
+// ─── TIMER CARD ────────────────────────────────────────────────────────────────
+const TimerCard = ({ timer, onDelete }) => {
+  const [running, setRunning] = useState(false);
+  const intervalRef = useRef(null);
+  const [timeLeft, setTimeLeft] = useState(timer.secs);
+  useEffect(() => {
+    if (running && timeLeft > 0) { intervalRef.current = setInterval(() => setTimeLeft(t => t > 0 ? t - 1 : 0), 1000); }
+    else { clearInterval(intervalRef.current); }
+    if (timeLeft === 0 && running) setRunning(false);
+    return () => clearInterval(intervalRef.current);
+  }, [running, timeLeft]);
+  const total = timer.secs, progress = total > 0 ? (timeLeft / total) : 0;
+  const R = 54, C = 2 * Math.PI * R, pct = progress * C, done = timeLeft === 0;
+  return (
+    <div className="card" style={{ padding: '20px', animation: 'fadeIn 0.3s ease', border: done ? '1px solid rgba(249,115,22,0.4)' : '1px solid var(--border)', boxShadow: done ? '0 0 24px rgba(249,115,22,0.2)' : 'none' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div><div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>{timer.name}</div><div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-display)', marginTop: 2 }}>{timer.preset || 'Custom timer'}</div></div>
+        <button className="btn-icon" style={{ padding: 8 }} onClick={onDelete}><Icon name="x" size={14}/></button>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+        <div className="timer-ring" style={{ width: 128, height: 128 }}>
+          <svg width="128" height="128" viewBox="0 0 128 128">
+            <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/>
+            <circle cx="64" cy="64" r={R} fill="none" stroke={done ? 'var(--accent-orange)' : 'var(--accent-amber)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={`${pct} ${C}`} style={{ transition: 'stroke-dasharray 0.5s ease', filter: done ? 'drop-shadow(0 0 8px rgba(249,115,22,0.6))' : 'none' }}/>
+          </svg>
+          <div className="timer-ring-text"><div style={{ fontSize: 22, fontWeight: 700, color: done ? 'var(--accent-orange)' : 'var(--text-primary)', fontFamily: 'var(--font-mono)', animation: done ? 'pulse 1s infinite' : 'none' }}>{done ? '✓' : fmtTime(timeLeft)}</div>{!done && <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>{running ? 'running' : 'paused'}</div>}</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button className={`btn ${done ? 'btn-ghost' : 'btn-primary'}`} style={{ flex: 1, padding: '12px' }} onClick={() => { if (done) { setTimeLeft(timer.secs); setRunning(false); } else setRunning(r => !r); }}>
+          {done ? <><Icon name="refresh" size={16}/> Reset</> : running ? <><Icon name="pause" size={16}/> Pause</> : <><Icon name="play" size={16}/> Start</>}
+        </button>
+        {!done && <button className="btn btn-ghost" style={{ padding: '12px 14px' }} onClick={() => { setTimeLeft(timer.secs); setRunning(false); }}><Icon name="refresh" size={16}/></button>}
+      </div>
+    </div>
+  );
+};
+
+// ─── COOKING MODE (with auto-advance) ─────────────────────────────────────────
+const CookingMode = ({ recipe, onExit, lang, t }) => {
+  const [step, setStep] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [justFinished, setJustFinished] = useState(false);
+  const intervalRef = useRef(null);
+  const current = recipe.steps[step];
+  const total = recipe.steps.length;
+
+  useEffect(() => {
+    setTimeLeft(current.timer > 0 ? current.timer : null);
+    setTimerRunning(false);
+    setJustFinished(false);
+    clearInterval(intervalRef.current);
+  }, [step]);
+
+  useEffect(() => {
+    if (timerRunning && timeLeft > 0) {
+      intervalRef.current = setInterval(() => setTimeLeft(t => { if (t <= 1) { clearInterval(intervalRef.current); setTimerRunning(false); setJustFinished(true); return 0; } return t - 1; }), 1000);
+    } else { clearInterval(intervalRef.current); }
+    return () => clearInterval(intervalRef.current);
+  }, [timerRunning, timeLeft]);
+
+  const progress = (step / total) * 100;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#0a0c10', zIndex: 200, display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+        <button className="btn btn-ghost" onClick={onExit} style={{ padding: '10px 16px' }}><Icon name="x" size={16}/> {t('exit', 'common')}</button>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-primary)', fontSize: 16 }}>{recipe.name}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-orange)', marginTop: 2 }}>Step {step + 1} of {total}</div>
+        </div>
+        <div style={{ width: 100 }}/>
+      </div>
+      <div style={{ padding: '0 32px' }}><div className="progress-bar" style={{ marginTop: 0, borderRadius: 0, height: 3 }}><div className="progress-fill" style={{ width: `${progress}%` }}/></div></div>
+
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+        <div style={{ maxWidth: 760, width: '100%', textAlign: 'center', animation: 'fadeIn 0.4s ease' }} key={step}>
+          <div style={{ fontSize: 72, marginBottom: 24, lineHeight: 1 }}>{current.icon}</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 100, padding: '8px 20px', marginBottom: 24 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-orange)', animation: 'pulse 2s infinite' }}/>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--accent-orange)', fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{current.title}</span>
+          </div>
+          <div style={{ fontSize: 24, lineHeight: 1.55, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontWeight: 400, marginBottom: 36 }}>{current.instruction}</div>
+
+          {current.timer > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+              <div style={{ background: 'var(--bg-card)', border: `1px solid ${timeLeft === 0 ? 'rgba(249,115,22,0.5)' : 'var(--border)'}`, borderRadius: 20, padding: '20px 40px', display: 'flex', alignItems: 'center', gap: 24 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 700, color: timeLeft === 0 ? 'var(--accent-orange)' : 'var(--text-primary)', animation: timeLeft > 0 && timerRunning ? 'timerTick 1s infinite' : 'none', minWidth: 140, textAlign: 'center' }}>
+                  {timeLeft !== null ? fmtTime(timeLeft) : fmtTime(current.timer)}
+                </div>
+                <button className="btn btn-primary" style={{ padding: '12px 24px' }}
+                  onClick={() => { if (timeLeft === 0) { setTimeLeft(current.timer); setTimerRunning(false); setJustFinished(false); } else setTimerRunning(r => !r); }}>
+                  {timeLeft === 0 ? <><Icon name="refresh" size={16}/> Reset</> : timerRunning ? <><Icon name="pause" size={16}/> Pause</> : <><Icon name="play" size={16}/> Start Timer</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {justFinished && step < total - 1 && (
+            <div className="step-advance-banner" style={{ marginBottom: 20 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#22c55e', marginBottom: 8 }}>✅ {lang === 'ar' ? 'انتهى المؤقت! هل أنت مستعد للخطوة التالية؟' : 'Timer done! Ready for the next step?'}</div>
+              <button className="btn" style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', padding: '12px 28px', margin: '0 auto' }} onClick={() => setStep(s => s + 1)}>
+                {t('next', 'common')} <Icon name="arrow" size={18} color="#22c55e"/>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ padding: '20px 32px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button className="btn btn-ghost btn-lg" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0} style={{ opacity: step === 0 ? 0.3 : 1 }}><Icon name="arrowLeft" size={20}/> Previous</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {recipe.steps.map((_, i) => (
+            <div key={i} onClick={() => setStep(i)} style={{ width: i === step ? 28 : 8, height: 8, borderRadius: 4, background: i === step ? 'var(--accent-orange)' : i < step ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.12)', cursor: 'pointer', transition: 'all 0.3s ease' }}/>
+          ))}
+        </div>
+        {step < total - 1 ? (
+          <button className="btn btn-primary btn-lg" onClick={() => setStep(s => s + 1)}>Next Step <Icon name="arrow" size={20}/></button>
+        ) : (
+          <button className="btn btn-primary btn-lg" onClick={onExit} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}><Icon name="check" size={20}/> {t('finish', 'common')}!</button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── RECIPE DETAIL MODAL ───────────────────────────────────────────────────────
+const RecipeModal = ({ recipe, onClose, onCook, favorites, toggleFav, lang, t }) => {
+  const [ingredients, setIngredients] = useState(recipe.ingredients.map(i => ({ ...i, checked: false })));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const isFav = favorites.includes(recipe.id);
+  
+  // Get unique categories from ingredients
+  const ingredientCategories = ['All', ...new Set(recipe.ingredients.map(i => i.category || 'Other'))];
+  
+  const filteredIngredients = ingredients.filter(ing => {
+    const matchesSearch = ing.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || ing.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+  
+  const checked = ingredients.filter(i => i.checked).length;
+  const checkedFiltered = filteredIngredients.filter(i => i.checked).length;
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal show" style={{ maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '28px 32px 20px', display: 'flex', gap: 20 }}>
+          <div style={{ width: 100, height: 100, borderRadius: 16, background: recipe.bgColor || '#1a1208', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, flexShrink: 0 }}>{recipe.emoji}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>{recipe.name}</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <span className={`tag ${getDifficultyColor(recipe.difficulty)}`}>{recipe.difficulty}</span>
+                  <span className={`tag ${getCategoryTag(recipe.category)}`}>{recipe.category}</span>
+                  {recipe.tags.slice(0, 2).map(t => <span key={t} className="tag tag-orange" style={{ fontSize: 11 }}>{t}</span>)}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginLeft: 12 }}>
+                <button className="btn-icon" onClick={() => toggleFav(recipe.id)} style={{ color: isFav ? 'var(--accent-orange)' : 'var(--text-muted)' }}><Icon name={isFav ? 'heartFill' : 'heart'} size={20} color={isFav ? 'var(--accent-orange)' : 'currentColor'}/></button>
+                <button className="btn-icon" onClick={onClose}><Icon name="x" size={18}/></button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 20 }}>
+              {[['⏱', recipe.time + ' min'], ['🔥', recipe.calories + ' cal'], ['👤', recipe.servings + ' servings'], ['⭐', recipe.rating]].map(([icon, val]) => (
+                <div key={val} style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-secondary)' }}>{icon} {val}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="divider"/>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          <div style={{ width: '42%', padding: '20px 24px', borderRight: '1px solid var(--border)', overflowY: 'auto' }} className="scrollable">
+            {/* Search and Filter Controls */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontSize: 15 }}>
+                {t('ingredients', 'recipes')} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-orange)', marginLeft: 10 }}>{checkedFiltered}/{filteredIngredients.length}</span>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input 
+                    className="input" 
+                    style={{ flex: 1 }} 
+                    placeholder={t('searchIngredients', 'recipes')} 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                  <select 
+                    className="input" 
+                    style={{ width: 150 }}
+                    value={selectedCategory} 
+                    onChange={e => setSelectedCategory(e.target.value)}
+                  >
+                    {ingredientCategories.map(cat => (
+                      <option key={cat} value={cat}>{t(cat.toLowerCase(), 'recipes')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: 12 }}><div className="progress-bar"><div className="progress-fill" style={{ width: `${filteredIngredients.length > 0 ? (checkedFiltered / filteredIngredients.length) * 100 : 0}%` }}/></div></div>
+              </div>
+              
+              {/* Ingredients List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} className="scrollable">
+                {filteredIngredients.map(ing => (
+                  <div key={ing.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: ing.checked ? 'rgba(249,115,22,0.07)' : 'rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                    onClick={() => setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, checked: !i.checked } : i))}>
+                    <div className={`checkbox ${ing.checked ? 'checked' : ''}`}>{ing.checked && <Icon name="check" size={12} color="white"/>}</div>
+                    <div style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: 14, color: ing.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: ing.checked ? 'line-through' : 'none' }}>{ing.name}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-amber)' }}>{ing.amount}</div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Quick Actions */}
+              {filteredIngredients.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ fontSize: 12 }}
+                    onClick={() => setIngredients(prev => prev.map(i => ({ ...i, checked: true })))}
+                  >
+                    {t('selectAll', 'recipes')}
+                  </button>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ fontSize: 12 }}
+                    onClick={() => setIngredients(prev => prev.map(i => ({ ...i, checked: false })))}
+                  >
+                    {t('deselectAll', 'recipes')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }} className="scrollable">
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, fontSize: 15 }}>{t('stepsOverview', 'recipes')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {recipe.steps.map((s, i) => (
+                <div key={i} style={{ display: 'flex', gap: 14, padding: '14px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-orange)', flexShrink: 0 }}>{i + 1}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--text-primary)', fontSize: 13, marginBottom: 3 }}>{s.title}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.instruction}</div>
+                    {s.timer > 0 && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-amber)', marginTop: 4 }}>⏱ {fmtTime(s.timer)}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="divider"/>
+        <div style={{ padding: '16px 32px', display: 'flex', gap: 12 }}>
+          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>{t('close', 'common')}</button>
+          <button className="btn btn-primary" style={{ flex: 2 }} onClick={() => { onCook(recipe); onClose(); }}><Icon name="chef" size={18}/> {t('startCookingMode', 'recipes')}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── ADD RECIPE MODAL ─────────────────────────────────────────────────────────
+const AddRecipeModal = ({ onClose, onSave }) => {
+  const [name, setName] = useState('');
+  const [emoji, setEmoji] = useState('🍳');
+  const [category, setCategory] = useState('Egyptian');
+  const [time, setTime] = useState('30');
+  const [difficulty, setDifficulty] = useState('Easy');
+  const [calories, setCalories] = useState('400');
+  const [servings, setServings] = useState('4');
+  const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState([{ id: 1, name: '', amount: '', checked: false }]);
+  const [steps, setSteps] = useState([{ id: 1, title: '', instruction: '', timer: 0, icon: '🍳' }]);
+
+  const addIngredient = () => setIngredients(p => [...p, { id: Date.now(), name: '', amount: '', checked: false }]);
+  const updateIngredient = (id, field, val) => setIngredients(p => p.map(i => i.id === id ? { ...i, [field]: val } : i));
+  const removeIngredient = (id) => setIngredients(p => p.filter(i => i.id !== id));
+  const addStep = () => setSteps(p => [...p, { id: Date.now(), title: '', instruction: '', timer: 0, icon: '🍳' }]);
+  const updateStep = (id, field, val) => setSteps(p => p.map(s => s.id === id ? { ...s, [field]: val } : s));
+  const removeStep = (id) => setSteps(p => p.filter(s => s.id !== id));
+
+  const save = () => {
+    if (!name.trim()) return alert('Please enter a recipe name.');
+    if (ingredients.filter(i => i.name.trim()).length === 0) return alert('Add at least one ingredient.');
+    if (steps.filter(s => s.title.trim()).length === 0) return alert('Add at least one step.');
+    const recipe = {
+      id: Date.now(), name: name.trim(), emoji, category, time: parseInt(time) || 30, difficulty,
+      rating: 5.0, calories: parseInt(calories) || 400, servings: parseInt(servings) || 4,
+      tags: [category, difficulty], description: description.trim() || name.trim(),
+      ingredients: ingredients.filter(i => i.name.trim()).map((i, idx) => ({ ...i, id: idx + 1 })),
+      steps: steps.filter(s => s.title.trim()).map((s, idx) => ({ ...s, id: idx + 1, timer: parseInt(s.timer) || 0 })),
+      bgColor: "#1a1208", accentColor: "#92400e", custom: true,
+    };
+    onSave(recipe);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal show" style={{ maxHeight: '92vh', display: 'flex', flexDirection: 'column', maxWidth: 800 }}>
+        <div style={{ padding: '24px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>➕ Add Your Recipe</div>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18}/></button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }} className="scrollable">
+          {/* Basic Info */}
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Basic Info</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: 10, marginBottom: 12 }}>
+            <input className="input" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍳" style={{ textAlign: 'center', fontSize: 22 }}/>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Recipe name..."/>
+          </div>
+          <textarea className="input" value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description..." style={{ marginBottom: 12, height: 64, resize: 'none' }}/>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Category</div>
+              <select className="input" value={category} onChange={e => setCategory(e.target.value)}>
+                {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Difficulty</div>
+              <select className="input" value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+                <option>Easy</option><option>Medium</option><option>Hard</option>
+              </select>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Time (min)</div>
+              <input className="input" type="number" value={time} onChange={e => setTime(e.target.value)}/>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Servings</div>
+              <input className="input" type="number" value={servings} onChange={e => setServings(e.target.value)}/>
+            </div>
+          </div>
+
+          {/* Ingredients */}
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Ingredients</div>
+          {ingredients.map((ing, idx) => (
+            <div key={ing.id} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, marginBottom: 8 }}>
+              <input className="input" value={ing.name} onChange={e => updateIngredient(ing.id, 'name', e.target.value)} placeholder={`Ingredient ${idx + 1}...`}/>
+              <input className="input" value={ing.amount} onChange={e => updateIngredient(ing.id, 'amount', e.target.value)} placeholder="Amount..."/>
+              <button className="btn-icon" style={{ padding: 8, flexShrink: 0 }} onClick={() => removeIngredient(ing.id)} disabled={ingredients.length === 1}><Icon name="trash" size={14} color="var(--accent-red)"/></button>
+            </div>
+          ))}
+          <button className="btn btn-ghost" style={{ padding: '10px 16px', fontSize: 13, marginBottom: 20 }} onClick={addIngredient}><Icon name="plus" size={14}/> Add Ingredient</button>
+
+          {/* Steps */}
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Steps</div>
+          {steps.map((s, idx) => (
+            <div key={s.id} className="card" style={{ padding: 14, marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(249,115,22,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-orange)', flexShrink: 0, marginTop: 2 }}>{idx + 1}</div>
+                <input className="input" value={s.icon} onChange={e => updateStep(s.id, 'icon', e.target.value)} style={{ width: 50, textAlign: 'center', fontSize: 18, flexShrink: 0 }}/>
+                <input className="input" value={s.title} onChange={e => updateStep(s.id, 'title', e.target.value)} placeholder="Step title..." style={{ flex: 1 }}/>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <input className="input" type="number" value={s.timer} onChange={e => updateStep(s.id, 'timer', e.target.value)} placeholder="Secs" style={{ width: 80 }}/>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>sec</span>
+                </div>
+                <button className="btn-icon" style={{ padding: 8, flexShrink: 0 }} onClick={() => removeStep(s.id)} disabled={steps.length === 1}><Icon name="trash" size={14} color="var(--accent-red)"/></button>
+              </div>
+              <textarea className="input" value={s.instruction} onChange={e => updateStep(s.id, 'instruction', e.target.value)} placeholder="Step instructions..." style={{ height: 72, resize: 'none' }}/>
+            </div>
+          ))}
+          <button className="btn btn-ghost" style={{ padding: '10px 16px', fontSize: 13 }} onClick={addStep}><Icon name="plus" size={14}/> Add Step</button>
+        </div>
+        <div className="divider"/>
+        <div style={{ padding: '16px 28px', display: 'flex', gap: 12 }}>
+          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" style={{ flex: 2 }} onClick={save}><Icon name="save" size={18}/> Save Recipe</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── RECIPES PAGE ──────────────────────────────────────────────────────────────
+const RecipesPage = ({ recipes, setRecipes, onCook, favorites, toggleFav, lang, t, setSelectedRecipe }) => {
+  const [search, setSearch] = useState('');
+  const [cat, setCat] = useState('All');
+  const [selected, setSelected] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const filtered = recipes.filter(r => (cat === 'All' || r.category === cat) && r.name.toLowerCase().includes(search.toLowerCase()));
+
+  const handleSaveRecipe = (recipe) => {
+    const updated = [...recipes, recipe];
+    setRecipes(updated);
+    LS.set('recipes_custom', updated.filter(r => r.custom));
+  };
+  const handleDeleteRecipe = (id) => {
+    const updated = recipes.filter(r => r.id !== id);
+    setRecipes(updated);
+    LS.set('recipes_custom', updated.filter(r => r.custom));
+    if (selected && selected.id === id) setSelected(null);
+  };
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="scrollable hide-scroll fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)' }}>{t('title', 'recipes')}</div>
+        <button className="btn btn-primary" style={{ padding: '12px 20px' }} onClick={() => setShowAdd(true)}><Icon name="plus" size={16}/> {t('addMyRecipe', 'recipes')}</button>
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <div style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Icon name="search" size={18}/></div>
+          <input className="input" style={{ paddingLeft: 46 }} placeholder={t('searchRecipes', 'recipes')} value={search} onChange={e => setSearch(e.target.value)}/>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto', paddingBottom: 4 }} className="hide-scroll">
+        {CATEGORIES.map(c => <div key={c} className={`chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>{c}</div>)}
+      </div>
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{t('noRecipes', 'recipes')}</div>
+          <div>{t('tryDifferent', 'recipes')}</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {filtered.map((recipe, idx) => {
+            const isFav = favorites.includes(recipe.id);
+            return (
+              <div key={recipe.id} className="card" style={{ cursor: 'pointer', animation: `fadeIn ${0.1 + idx * 0.05}s ease forwards`, overflow: 'visible' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}>
+                <div style={{ height: 160, background: `linear-gradient(135deg, ${recipe.bgColor || '#1a1208'}, rgba(18,22,30,0.9))`, borderRadius: '20px 20px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 72, position: 'relative' }} onClick={() => setSelected(recipe)}>
+                  {recipe.emoji}
+                  <button style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', color: isFav ? 'var(--accent-orange)' : 'white', transition: 'all 0.2s' }} onClick={e => { e.stopPropagation(); toggleFav(recipe.id); }}>
+                    <Icon name={isFav ? 'heartFill' : 'heart'} size={18} color={isFav ? 'var(--accent-orange)' : 'white'}/>
+                  </button>
+                  <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6 }}>
+                    <span className={`tag ${getDifficultyColor(recipe.difficulty)}`} style={{ fontSize: 11 }}>{recipe.difficulty}</span>
+                    {recipe.custom && <span className="tag tag-blue" style={{ fontSize: 11 }}>{t('myRecipe', 'recipes')}</span>}
+                  </div>
+                </div>
+                <div style={{ padding: '16px' }} onClick={() => setSelected(recipe)}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{recipe.name}</div>
+                  <div style={{ display: 'flex', gap: 12, fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
+                    <span>⏱ {recipe.time}{t('minutes', 'recipes')}</span><span>🔥 {recipe.calories} {t('calories', 'recipes')}</span>
+                    <span style={{ marginLeft: 'auto', color: 'var(--accent-amber)' }}>⭐ {recipe.rating}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <span className={`tag ${getCategoryTag(recipe.category)}`} style={{ fontSize: 11 }}>{recipe.category}</span>
+                    {recipe.tags.slice(0, 1).map(tag => <span key={tag} className="tag tag-orange" style={{ fontSize: 11 }}>{tag}</span>)}
+                  </div>
+                </div>
+                <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
+                  <button className="btn btn-primary" style={{ flex: 1, padding: '11px' }} onClick={() => onCook(recipe)}><Icon name="chef" size={16}/> {t('startCookingMode', 'recipes')}</button>
+                  {recipe.custom && <button className="btn btn-danger" style={{ padding: '11px 14px' }} onClick={() => { if(window.confirm('Delete this recipe?')) handleDeleteRecipe(recipe.id); }}><Icon name="trash" size={14}/></button>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {selected && <RecipeModal recipe={selected} onClose={() => setSelected(null)} onCook={r => { onCook(r); setSelected(null); }} favorites={favorites} toggleFav={toggleFav}/>}
+      {showAdd && <AddRecipeModal onClose={() => setShowAdd(false)} onSave={handleSaveRecipe}/>}
+    </div>
+  );
+};
+
+// ─── SHOPPING PAGE (with localStorage) ───────────────────────────────────────
+const ShoppingPage = ({ lang, t }) => {
+  const [items, setItems] = useState(() => LS.get('shopping', SHOPPING_LIST_DEFAULT));
+  const [newItem, setNewItem] = useState('');
+  const [qty, setQty] = useState('');
+  const checkedCount = items.filter(i => i.checked).length;
+
+  const save = (next) => { setItems(next); LS.set('shopping', next); };
+  const addItem = () => {
+    if (!newItem.trim()) return;
+    save([...items, { id: Date.now(), name: newItem.trim(), qty: qty || '1', checked: false, category: 'Other' }]);
+    setNewItem(''); setQty('');
+  };
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="scrollable hide-scroll fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)' }}>{t('title', 'shopping')}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>{checkedCount} {t('of', 'shopping')} {items.length} {t('itemsCollected', 'shopping')}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {checkedCount > 0 && <button className="btn btn-ghost" style={{ padding: '10px 16px', fontSize: 13 }} onClick={() => save(items.filter(i => !i.checked))}>{t('clearDone', 'shopping')}</button>}
+        </div>
+      </div>
+      <div className="progress-bar" style={{ marginBottom: 24 }}><div className="progress-fill" style={{ width: `${items.length > 0 ? (checkedCount / items.length) * 100 : 0}%` }}/></div>
+      <div className="card" style={{ padding: '16px', marginBottom: 20, display: 'flex', gap: 10 }}>
+        <input className="input" style={{ flex: 1 }} placeholder={t('addItem', 'shopping')} value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()}/>
+        <input className="input" style={{ width: 120 }} placeholder={t('addQty', 'shopping')} value={qty} onChange={e => setQty(e.target.value)}/>
+        <button className="btn btn-primary" style={{ padding: '12px 20px', flexShrink: 0 }} onClick={addItem}><Icon name="plus" size={18}/></button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map(item => (
+          <div key={item.id} className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', opacity: item.checked ? 0.6 : 1, transition: 'all 0.2s ease' }}
+            onClick={() => save(items.map(i => i.id === item.id ? { ...i, checked: !i.checked } : i))}>
+            <div className={`checkbox ${item.checked ? 'checked' : ''}`}>{item.checked && <Icon name="check" size={12} color="white"/>}</div>
+            <div style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none' }}>{item.name}</div>
+            <span className="tag tag-amber" style={{ fontSize: 12 }}>{item.qty}</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', padding: '4px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 8 }}>{item.category}</span>
+            <button className="btn-icon" style={{ padding: 8 }} onClick={e => { e.stopPropagation(); save(items.filter(i => i.id !== item.id)); }}><Icon name="trash" size={14} color="var(--accent-red)"/></button>
+          </div>
+        ))}
+      </div>
+      {items.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>{t('listEmpty', 'shopping')}</div>
+          <div>{t('addItemsAbove', 'shopping')}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── INVENTORY PAGE (with localStorage) ──────────────────────────────────────
+const InventoryPage = ({ lang, t }) => {
+  const [items, setItems] = useState(() => LS.get('inventory', INVENTORY_ITEMS_DEFAULT));
+  const [newName, setNewName] = useState('');
+  const [newQty, setNewQty] = useState('');
+  const [newUnit, setNewUnit] = useState('pcs');
+  const [newCat, setNewCat] = useState('Pantry');
+  const today = new Date();
+
+  const save = (next) => { setItems(next); LS.set('inventory', next); };
+
+  const addItem = () => {
+    if (!newName.trim()) return;
+    const expiry = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const emojis = { Dairy: '🥛', Pantry: '🫙', Produce: '🥦', Protein: '🥩', Frozen: '🧊', Bakery: '🍞', Other: '🥘' };
+    save([...items, { id: Date.now(), name: newName.trim(), qty: parseFloat(newQty) || 1, unit: newUnit, expires: expiry, emoji: emojis[newCat] || '🥘', category: newCat }]);
+    setNewName(''); setNewQty('');
+  };
+
+  const getExpiry = (dateStr) => {
+    const d = new Date(dateStr), diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return { label: 'Expired', cls: 'tag-red' };
+    if (diff <= 3) return { label: `${diff}d left`, cls: 'tag-red' };
+    if (diff <= 7) return { label: `${diff}d left`, cls: 'tag-amber' };
+    return { label: `${diff}d left`, cls: 'tag-green' };
+  };
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="scrollable hide-scroll fade-in">
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 20 }}>
+        {t('title', 'inventory')} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--text-muted)', marginLeft: 8 }}>{items.length} {t('items', 'inventory')}</span>
+      </div>
+      <div className="card" style={{ padding: '16px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+          <input className="input" style={{ flex: 1 }} placeholder={t('ingredientName', 'inventory')} value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()}/>
+          <input className="input" style={{ width: 90 }} placeholder={t('qty', 'inventory')} value={newQty} onChange={e => setNewQty(e.target.value)} type="number"/>
+          <input className="input" style={{ width: 80 }} placeholder={t('unit', 'inventory')} value={newUnit} onChange={e => setNewUnit(e.target.value)}/>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <select className="input" style={{ flex: 1 }} value={newCat} onChange={e => setNewCat(e.target.value)}>
+            {['Dairy','Pantry','Produce','Protein','Frozen','Bakery','Other'].map(c => <option key={c}>{c}</option>)}
+          </select>
+          <button className="btn btn-primary" style={{ padding: '12px 24px' }} onClick={addItem}><Icon name="plus" size={18}/> {t('add', 'common')}</button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        {items.map((item, idx) => {
+          const exp = getExpiry(item.expires);
+          return (
+            <div key={item.id} className="card" style={{ padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center', animation: `fadeIn ${0.1 + idx * 0.04}s ease` }}>
+              <div style={{ fontSize: 36, width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>{item.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{item.name}</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-amber)' }}>{item.qty} {item.unit}</span>
+                  <span className={`tag ${exp.cls}`} style={{ fontSize: 11 }}>{exp.label}</span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)' }}>{item.category}</span>
+                </div>
+              </div>
+              <button className="btn-icon" style={{ padding: 8 }} onClick={() => save(items.filter(i => i.id !== item.id))}><Icon name="trash" size={14} color="var(--accent-red)"/></button>
+            </div>
+          );
+        })}
+      </div>
+      {items.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>{t('inventoryEmpty', 'inventory')}</div>
+          <div>{t('addIngredients', 'inventory')}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── HOME PAGE ─────────────────────────────────────────────────────────────────
+const HomePage = ({ setPage, recipes, favorites, lang, t }) => {
+  const time = useTime();
+  const hour = time.getHours();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const menuItems = [
+    { id: 'recipes', icon: 'book', labelKey: 'recipes', sub: `${recipes.length} ${t('available', 'home')}`, emoji: '📖', color: '#f97316' },
+    { id: 'shopping', icon: 'cart', labelKey: 'shopping', sub: t('saveList', 'home'), emoji: '🛒', color: '#f59e0b' },
+    { id: 'inventory', icon: 'box', labelKey: 'inventory', sub: t('trackIngredients', 'home'), emoji: '📦', color: '#22c55e' },
+    { id: 'ai', icon: 'bot', labelKey: 'ai', sub: t('askAnything', 'home'), emoji: '🤖', color: '#60a5fa' },
+    { id: 'timers', icon: 'timer', labelKey: 'timers', sub: t('multiTimer', 'home'), emoji: '⏱', color: '#a78bfa' },
+    { id: 'settings', icon: 'settings', labelKey: 'settings', sub: t('preferences', 'settings'), emoji: '⚙️', color: '#94a3b8' },
+  ];
+  const egyptianRecipes = recipes.filter(r => r.category === 'Egyptian');
+  const suggestedRecipe = egyptianRecipes[Math.floor(Math.random() * egyptianRecipes.length)] || recipes[0];
+  
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 5) return t('night', 'home');
+    if (h < 12) return t('greeting', 'home');
+    if (h < 17) return t('afternoon', 'home');
+    if (h < 21) return t('evening', 'home');
+    return t('night', 'home');
+  };
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 24 }} className="scrollable hide-scroll fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>
+            {days[time.getDay()]}, {months[time.getMonth()]} {time.getDate()}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>
+            {getGreeting()}, Chef <span className="gradient-text">Alex</span> 👋
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--text-secondary)', marginTop: 6 }}>
+            {lang === 'ar' ? 
+              (hour < 12 ? "ابدأ بالفول المدمس أو الطعمية 🌅" : hour < 17 ? "جرب الكشري أو المحشي للغداء 🌤" : "الملوخية أو المكرونة بالبشامل الليلة؟ 🌙") :
+              (hour < 12 ? "Start with Ful Medames or Taameya 🌅" : hour < 17 ? "Try Koshari or Mahshi for lunch 🌤" : "Molokhia or Macarona Bechamel tonight? 🌙")
+            }
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-2px' }}>
+            {String(time.getHours()).padStart(2,'0')}:{String(time.getMinutes()).padStart(2,'0')}
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--text-muted)', marginTop: 2 }}>:{String(time.getSeconds()).padStart(2,'0')}</div>
+        </div>
+      </div>
+      <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20, background: `linear-gradient(135deg, ${suggestedRecipe?.bgColor || '#1a1208'}, rgba(18,22,30,0.95))`, borderColor: 'rgba(249,115,22,0.25)', cursor: 'pointer', boxShadow: '0 4px 24px rgba(249,115,22,0.1)' }} onClick={() => setPage('recipes')}>
+        <div style={{ fontSize: 56, flexShrink: 0 }}>{suggestedRecipe?.emoji}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--accent-orange)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="sparkle" size={12} color="var(--accent-orange)"/> {t('suggested', 'home')}</span></div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>{suggestedRecipe?.name}</div>
+          <div style={{ display: 'flex', gap: 16, fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-secondary)' }}>
+            <span>⏱ {suggestedRecipe?.time} {t('minutes', 'recipes')}</span><span>🔥 {suggestedRecipe?.calories} {t('calories', 'recipes')}</span>
+            <span className={`tag ${getCategoryTag(suggestedRecipe?.category)}`} style={{ fontSize: 11 }}>{suggestedRecipe?.category}</span>
+          </div>
+        </div>
+        <button className="btn btn-primary" style={{ padding: '14px 20px' }}>{t('cookIt', 'home')} <Icon name="arrow" size={16}/></button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        {menuItems.map((item, idx) => (
+          <div key={item.id} className="card" style={{ padding: '22px', cursor: 'pointer', animation: `fadeIn ${0.1 + idx * 0.05}s ease forwards`, transition: 'all 0.25s ease', position: 'relative', overflow: 'hidden' }}
+            onClick={() => setPage(item.id)}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.background = 'var(--bg-card-hover)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.background = ''; }}>
+            <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 80, opacity: 0.06, userSelect: 'none' }}>{item.emoji}</div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}1a`, border: `1px solid ${item.color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <Icon name={item.icon} size={22} color={item.color}/>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t(item.labelKey, 'nav')}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-muted)' }}>{item.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {[
+          { labelKey: 'savedRecipes', val: favorites.length, icon: '❤️' },
+          { labelKey: 'egyptianDishes', val: recipes.filter(r=>r.category==='Egyptian').length, icon: '🇪🇬' },
+          { labelKey: 'airFryerRecipes', val: recipes.filter(r=>r.category==='Air Fryer').length, icon: '🌀' },
+          { labelKey: 'bakingRecipes', val: recipes.filter(r=>r.category==='Baking').length, icon: '🧁' },
+        ].map(stat => (
+          <div key={stat.labelKey} className="card" style={{ padding: '16px 20px' }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>{stat.icon}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{stat.val}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{t(stat.labelKey, 'home')}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── AI PAGE ───────────────────────────────────────────────────────────────────
+const SUGGESTED_PROMPTS = ["What Egyptian dish should I make?","Substitute for tahini","How long does Koshari take?","Quick air fryer recipe","Easy baking for beginners","Healthy Egyptian breakfast"];
+const getSuggestedPrompts = (lang) => lang === 'ar'
+  ? ["ما الطبق المصري الذي أطبخه؟","بديل للطحينة","كم يستغرق الكشري؟","وصفة مقلاة هوائية سريعة","خبز سهل للمبتدئين","إفطار مصري صحي"]
+  : SUGGESTED_PROMPTS;
+const getPresets = (lang) => [
+  { label: lang === 'ar' ? '5 دقائق' : '5 min', secs: 300 },
+  { label: lang === 'ar' ? '10 دقائق' : '10 min', secs: 600 },
+  { label: lang === 'ar' ? '15 دقائق' : '15 min', secs: 900 },
+  { label: lang === 'ar' ? '20 دقائق' : '20 min', secs: 1200 },
+  { label: lang === 'ar' ? '30 دقائق' : '30 min', secs: 1800 },
+  { label: lang === 'ar' ? '45 دقائق' : '45 min', secs: 2700 },
+  { label: lang === 'ar' ? '60 دقائق' : '60 min', secs: 3600 },
+];
+const getAIResponse = (msg, lang) => {
+  const l = msg.toLowerCase();
+  if (l.includes('koshari')) {
+    if (lang === 'ar') {
+      return "الكشري هو الطبق الوطني المصري! 🍚\n\nيستغرق حوالي ساعة ولكن معظم الوقت هو طهي سلبي.\n\n**نصائح أساسية:**\n• اقلي البصل حتى يصبح ذهبيًا عميقًا — هذا هو ما يجعله\n• صلصة الطماطم (الدعة) تحتاج إلى الخل للحصول على تلك النكهة الحامضة\n• الأرز + العدس + الباستا + الحمص كلها في قدر منفصل\n\nهل تريد أن أسيرك خطوة بخطوة في الوصفة؟";
+    } else {
+      return "Koshari is Egypt's national street food! 🍚\n\nIt takes about 1 hour but most of it is passive cooking time.\n\n**Key tips:**\n• Fry your onions until deeply golden — this is what makes it\n• The tomato sauce (da'a) needs vinegar for that tangy kick\n• Rice + lentils + pasta + chickpeas all go in separate pots\n\nWant me to walk you through the recipe step by step?";
+    }
+  }
+  if (l.includes('molokhia')) {
+    if (lang === 'ar') {
+      return "الملوخية هي واحدة من أقدم أطباق مصر! 🌿\n\nالمفتاح هو الطعليا (الطعليا) — يجب إضافته ساخنًا إلى الحساء في النهاية تمامًا. لا تتخطى هذه الخطوة!\n\n**نصيحة احترافية:** إذا كنت تستخدم ملوخية مجمدة، اعصر كل الماء أولاً وإلا سيصبح الحساء مائيًا.\n\nمثالي مع الأرز الأبيض وقطرات من عصير الليمون.";
+    } else {
+      return "Molokhia is one of Egypt's oldest dishes! 🌿\n\nThe key is the ta'leyya (garlic sizzle) — it must be added bubbling hot to the soup at the very end. Don't skip this step!\n\n**Pro tip:** If using frozen molokhia, squeeze out all of the water first or the soup will be watery.\n\nPerfect with white rice and a splash of lemon juice.";
+    }
+  }
+  if (l.includes('air fry') || l.includes('airfry')) {
+    if (lang === 'ar') {
+      return "لدي وصفات في المقلاة الهوائية:\n\n🍗 **أجنحة دجاج مقرمشة** — 35 دقيقة، لا تحتاج زيت\n🧆 **فلافل مقرمش** — 20 دقيقة، أكثر صحة من القلي العميق\n🟡 **بسبوسة في المقلاة الهوائية** — 25 دقيقة، نفس المذاق الرائع\n🫓 **رقائق بيتا** — 10 دقيقة، وجبة خفيفة مثالية\n\nالسر للنتائج المقرمشة: سخن المقلاة مسبقًا ولا تزدحمها.";
+    } else {
+      return "Air fryer recipes I have for you:\n\n🍗 **Crispy Chicken Wings** — 35 min, no oil needed\n🧆 **Crispy Falafel** — 20 min, healthier than deep frying\n🟡 **Air Fryer Basbousa** — 25 min, same great taste\n🫓 **Pita Chips** — 10 min, perfect snack\n\nThe secret to crispy air fryer results: preheat the basket and don't overcrowd it!";
+    }
+  }
+  if (l.includes('bak')) {
+    if (lang === 'ar') {
+      return "وصفات الخبز المتاحة:\n\n🟡 **البسبوسة** — كيك السمولينا الكلاسيكي مع شراب الورد\n🧇 **الكناافة** — معجونة رقيقة بالجبن (أسطورية!)\n🥞 **فطير مشلت** — معجن طبقات مصرية رقيقة\n🥧 **علي** — بودنغ المصري\n🍌 **خبز الموز** — بسيط ولذيذ\n🍫 **كيك الشوكولات بالحمض** — مثير ولكني سهل\n\nابدأ بالبسبوسة إذا كنت جديدًا — إنها مضادة للأخطاء!";
+    } else {
+      return "Baking recipes available:\n\n🟡 **Basbousa** — Classic semolina cake with rose syrup\n🧇 **Kunafa** — Shredded pastry with cheese (legendary!)\n🥞 **Feteer Meshaltet** — Egyptian flaky layered pastry\n🥧 **Om Ali** — Egyptian bread pudding\n🍌 **Banana Bread** — Simple and delicious\n🍫 **Chocolate Lava Cake** — Impressive but easy\n\nStart with Basbousa if you're new — it's foolproof!";
+    }
+  }
+  if (l.includes('egyptian') || l.includes('egypt')) {
+    if (lang === 'ar') {
+      return "أعظم ضرباتك في كتاب الوصفات! 🇪🇬\n\n**طعام الشارع:** الكشري، الطعمية، الحواوشي، كبدة الإسكندرية\n**الأطباق الرئيسية:** الملوخية، الفتة، البامية، البامية، صايدايا، مكرونا بالبشامل\n**المحشو:** المحشي، ممبار\n**الإفطار:** الفول المدمس، الطعمية\n**الحلويات:** البسبوسة، الكناافة، علي، رز باللبن\n**تقليدي:** فسيخ ورنجا، فطير مشلت\n\nكل الوصفات لديها مكونات كاملة ومؤقتات خطوة بخطوة!";
+    } else {
+      return "Egypt's greatest hits in your recipe book! 🇪🇬\n\n**Street food:** Koshari, Taameya, Hawawshi, Alexandrian Liver\n**Main dishes:** Molokhia, Fattah, Bamia, Sayadeya, Macarona Bechamel\n**Stuffed:** Mahshi, Mombar\n**Breakfast:** Ful Medames, Taameya\n**Desserts:** Basbousa, Kunafa, Om Ali, Roz Bel Laban\n**Traditional:** Feseekh/Ringa, Feteer Meshaltet\n\nAll recipes have full ingredients and step-by-step timers!";
+    }
+  }
+  if (l.includes('tahini') || l.includes('substitute')) {
+    if (lang === 'ar') {
+      return "بدائل الطحينة:\n\n🥜 **زبدة الفول السوداني** — الأقرب للملمس، حلو قليلاًا\n🌻 **زبدة بذور عباد الشمس** — خيار خالٍ من المكسرات\n🥑 **زبدة الكاجو**** — أكثر نعومة وكريمية\n🫙 **الزبادي اليوناني** — للغمسول وليس للصلصات\n\nللطعمية أو الكشري، الطحينة مهمة حقًا — أوصي بالحصول عليها بدلاً من الاستبدال. إنها متاحة على نطاق واسع!";
+    } else {
+      return "Tahini substitutes:\n\n🥜 **Peanut butter** — closest in texture, slightly sweeter\n🌻 **Sunflower seed butter** — nut-free option\n🥑 **Cashew butter** — milder, creamier\n🫙 **Greek yogurt** — for dips, not for sauces\n\nFor Taameya or Koshari sauce, tahini is really important — I'd recommend getting it rather than substituting. It's widely available!";
+    }
+  }
+  if (l.includes('breakfast') || l.includes('morning')) {
+    if (lang === 'ar') {
+      return "أفكار إفطار مصري:\n\n🫘 **الفول المدمس** — الكلاسيكي، جاهز في 15 دقيقة من الفول المعلب\n🧆 **الطعمية** — فلافل مصري، أفضل طاز\n🫙 **فطير مشلت** — معجن رقيق بالعسل أو الجبن\n🍮 **رز باللبن** — بودنغ المصري، يقدم باردًا\n\n**الأسرع:** الفول المدمس من الفول المعلب يستغرق 15 دقيقة فقط وهو مليء بالبروتين!";
+    } else {
+      return "Egyptian breakfast ideas:\n\n🫘 **Ful Medames** — The classic, ready in 15 min from canned beans\n🧆 **Taameya** — Egyptian falafel, best made fresh\n🫙 **Feteer Meshaltet** — Flaky pastry with honey or cheese\n🍮 **Roz Bel Laban** — Rice pudding, serve cold\n\n**Quickest:** Ful Medames from canned beans takes just 15 minutes and is packed with protein!";
+    }
+  }
+  return lang === 'ar' ? 
+    "أنا خبير المطبخ المصري! 🇪🇬👨‍🍳\n\nيمكنني المساعدة في:\n🍽️ كل 20 وصفة مصرية في كتابك — من الكشري إلى الكنافة، بالإضافة إلى وصفات المقلاة الهوائية والخبز. اسألني أي شيء!" :
+    "I'm your Egyptian kitchen expert! 🇪🇬👨‍🍳\n\nI can help with:\n🍽️ All 20 Egyptian recipes in your book\n🌀 Air fryer tips and recipes\n🧁 Baking guidance\n⏱️ Cooking times and timers\n🔄 Ingredient substitutions\n\n**Try asking me:**\n• 'What Egyptian dish should I make tonight?'\n• 'Quick air fryer recipe'\n• 'How do I make Kunafa?'";
+};
+
+const AIPage = ({ lang, t }) => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  const send = (msg) => {
+    const text = msg || input.trim();
+    if (!text || loading) return;
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text }]);
+    setLoading(true);
+    setTimeout(() => { setMessages(prev => [...prev, { role: 'assistant', text: getAIResponse(text, lang) }]); setLoading(false); }, 800 + Math.random() * 500);
+  };
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 32px 0', overflow: 'hidden' }} className="fade-in">
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 16 }}>
+        {t('title', 'ai')}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 12, verticalAlign: 'middle', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '4px 12px', borderRadius: 100 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }}/> {t('online', 'ai')}
+        </span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        {getSuggestedPrompts(lang).map(p => <button key={p} className="chip" style={{ fontSize: 12 }} onClick={() => send(p)}>{p}</button>)}
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16 }} className="scrollable hide-scroll">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 8 }}>
+          {messages.map((msg, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+              {msg.role === 'assistant' && (<div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, var(--accent-orange), #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 10, flexShrink: 0, fontSize: 18 }}>🤖</div>)}
+              <div className={`chat-bubble ${msg.role}`} style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{msg.text}</div>
+            </div>
+          ))}
+          {loading && (<div style={{ display: 'flex', gap: 10 }}><div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, var(--accent-orange), #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🤖</div><div className="chat-bubble assistant" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div className="typing-dot"/><div className="typing-dot"/><div className="typing-dot"/></div></div>)}
+          <div ref={bottomRef}/>
+        </div>
+      </div>
+      <div style={{ paddingBottom: 24, display: 'flex', gap: 10 }}>
+        <input className="input" style={{ flex: 1 }} placeholder={t('placeholder', 'ai')} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}/>
+        <button className="btn btn-primary" style={{ padding: '12px 20px' }} onClick={() => send()}><Icon name="send" size={18}/></button>
+      </div>
+    </div>
+  );
+};  
+
+// ─── TIMERS PAGE ────────────────────────────────────────────────────────────────
+const TimersPage = ({ lang, t }) => {
+  const [newName, setNewName] = useState('');
+  const [newMins, setNewMins] = useState('');
+  const [timers, setTimers] = useState([]);
+  const addTimer = (secs, name) => {
+    setTimers(prev => [...prev, { id: Date.now(), name, secs, startedAt: Date.now() }]);
+  };
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="scrollable hide-scroll fade-in">
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 20 }}>{t('title', 'timers')}</div>
+      <div className="card" style={{ padding: '16px', marginBottom: 16, display: 'flex', gap: 10 }}>
+        <input className="input" placeholder={t('timerName', 'timers')} value={newName} onChange={e => setNewName(e.target.value)} style={{ flex: 1 }}/>
+        <input className="input" type="number" placeholder={t('minutes', 'timers')} value={newMins} onChange={e => setNewMins(e.target.value)} style={{ width: 130 }}/>
+        <button className="btn btn-primary" style={{ padding: '12px 20px', flexShrink: 0 }} onClick={() => { if (newMins) { addTimer(parseInt(newMins) * 60, newName); setNewName(''); setNewMins(''); } }}><Icon name="plus" size={18}/> {t('add', 'timers')}</button>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+        {getPresets(lang).map(p => <button key={p.label} className="chip" onClick={() => addTimer(p.secs, p.label + ' ' + t('timer', 'timers'))}><Icon name="plus" size={12}/> {p.label}</button>)}
+      </div>
+      {timers.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>⏱</div><div style={{ fontSize: 18, fontWeight: 600 }}>{t('noTimers', 'timers')}</div><div>{t('addPreset', 'timers')}</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {timers.map(timer => <TimerCard key={timer.id} timer={timer} onDelete={() => setTimers(prev => prev.filter(x => x.id !== timer.id))}/>)}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── PROFILE MODAL ─────────────────────────────────────────────────────────────
+const ProfileModal = ({ onClose, profile, setProfile }) => {
+  const [name, setName] = useState(profile.name);
+  const [emoji, setEmoji] = useState(profile.emoji);
+  const [bio, setBio] = useState(profile.bio);
+  const save = () => {
+    const p = { name, emoji, bio };
+    setProfile(p);
+    LS.set('profile', p);
+    onClose();
+  };
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal show" style={{ maxWidth: 480 }}>
+        <div style={{ padding: '24px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Edit Profile</div>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18}/></button>
+        </div>
+        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+            <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-orange), #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, cursor: 'pointer' }} title="Click to change emoji">
+              {emoji}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Profile Emoji</div>
+            <input className="input" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="👨‍🍳" style={{ textAlign: 'center', fontSize: 22 }}/>
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Your Name</div>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Chef Name..."/>
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Bio</div>
+            <textarea className="input" value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell us about your cooking style..." style={{ height: 80, resize: 'none' }}/>
+          </div>
+        </div>
+        <div className="divider"/>
+        <div style={{ padding: '16px 28px', display: 'flex', gap: 12 }}>
+          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" style={{ flex: 2 }} onClick={save}><Icon name="save" size={18}/> Save Profile</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── ABOUT MODAL ─────────────────────────────────────────────────────────────
+const AboutModal = ({ onClose }) => (
+  <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal show" style={{ maxWidth: 440 }}>
+      <div style={{ padding: '32px 28px', textAlign: 'center' }}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>🇪🇬</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>KitchenOS</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-orange)', letterSpacing: '0.15em', marginBottom: 20 }}>EGYPTIAN SMART KITCHEN v3.0</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
+          A complete kitchen companion built for Egyptian cooking. Featuring 25 authentic recipes, AI chef assistant, smart timers, inventory tracking, and shopping lists — all saved locally on your device.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          {[['🍽️', '25 Recipes', 'Egyptian, Baking & Air Fryer'], ['🤖', 'AI Chef', 'Powered by smart responses'], ['⏱️', 'Multi-Timer', 'Run unlimited timers'], ['💾', 'Auto-Save', 'Everything saved locally']].map(([icon, title, desc]) => (
+            <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', textAlign: 'left' }}>
+              <span style={{ fontSize: 20 }}>{icon}</span>
+              <div><div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{title}</div><div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)' }}>{desc}</div></div>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── DEVICES MODAL ─────────────────────────────────────────────────────────────
+const DevicesModal = ({ onClose }) => {
+  const devices = [
+    { name: 'Smart Oven', icon: '🔥', status: 'Connected', color: '#22c55e' },
+    { name: 'Air Fryer', icon: '🌀', status: 'Connected', color: '#22c55e' },
+    { name: 'Refrigerator', icon: '🧊', status: 'Disconnected', color: '#ef4444' },
+    { name: 'Coffee Maker', icon: '☕', status: 'Pairing...', color: '#f59e0b' },
+  ];
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal show" style={{ maxWidth: 440 }}>
+        <div style={{ padding: '24px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Connected Devices</div>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18}/></button>
+        </div>
+        <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {devices.map(d => (
+            <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 28 }}>{d.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: d.color }}>{d.status}</div>
+              </div>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, boxShadow: `0 0 8px ${d.color}` }}/>
+            </div>
+          ))}
+          <button className="btn btn-ghost" style={{ marginTop: 8 }}>+ Add Device</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── DATA PRIVACY MODAL ─────────────────────────────────────────────────────────
+const PrivacyModal = ({ onClose }) => {
+  const clearAll = () => {
+    if (window.confirm('This will clear all your saved data (recipes, shopping list, inventory). Are you sure?')) {
+      ['shopping', 'inventory', 'favorites', 'settings', 'profile', 'recipes_custom'].forEach(k => localStorage.removeItem('kitchenos_' + k));
+      alert('All data cleared. Refresh the page to reset.');
+    }
+  };
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal show" style={{ maxWidth: 440 }}>
+        <div style={{ padding: '24px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Data & Privacy</div>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18}/></button>
+        </div>
+        <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ padding: '16px', borderRadius: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, color: '#22c55e', marginBottom: 4 }}>🔒 Your data is private</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>All data is stored locally on your device using localStorage. Nothing is sent to any server. KitchenOS works completely offline.</div>
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <b style={{ color: 'var(--text-primary)' }}>What we store:</b> Shopping list, inventory, favorite recipes, custom recipes, settings and profile.
+          </div>
+          <button className="btn btn-danger" onClick={clearAll} style={{ padding: '14px' }}>🗑️ Clear All Data</button>
+          <button className="btn btn-ghost" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── SETTINGS PAGE ─────────────────────────────────────────────────────────────
+const SettingsPage = ({ lang, t, setLang }) => {
+  const [settings, setSettings] = useState(() => LS.get('settings', { darkMode: true, voice: false, notifications: true, fullscreen: false, tabletMode: true }));
+  const [profile, setProfile] = useState(() => LS.get('profile', { name: 'Chef Alex', emoji: '👨‍🍳', bio: 'Your personal kitchen OS' }));
+  const [voiceStatus, setVoiceStatus] = useState('idle'); // idle | listening | error
+  const [activeModal, setActiveModal] = useState(null);
+
+  const applyDarkMode = (dark) => {
+    const root = document.documentElement;
+    if (dark) {
+      root.style.setProperty('--bg-primary', '#0d0f12');
+      root.style.setProperty('--bg-secondary', '#13161b');
+      root.style.setProperty('--bg-card', '#181c23');
+      root.style.setProperty('--bg-card-hover', '#1e2330');
+      root.style.setProperty('--text-primary', '#f1f5f9');
+      root.style.setProperty('--text-secondary', '#94a3b8');
+      root.style.setProperty('--text-muted', '#475569');
+      root.style.setProperty('--border', 'rgba(255,255,255,0.06)');
+    } else {
+      root.style.setProperty('--bg-primary', '#f8fafc');
+      root.style.setProperty('--bg-secondary', '#f1f5f9');
+      root.style.setProperty('--bg-card', '#ffffff');
+      root.style.setProperty('--bg-card-hover', '#f8fafc');
+      root.style.setProperty('--text-primary', '#0f172a');
+      root.style.setProperty('--text-secondary', '#475569');
+      root.style.setProperty('--text-muted', '#94a3b8');
+      root.style.setProperty('--border', 'rgba(0,0,0,0.08)');
+    }
+  };
+
+  const toggle = (key) => {
+    const next = { ...settings, [key]: !settings[key] };
+    setSettings(next);
+    LS.set('settings', next);
+
+    if (key === 'darkMode') {
+      applyDarkMode(next.darkMode);
+    }
+    if (key === 'fullscreen') {
+      if (next.fullscreen) {
+        document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+      } else {
+        document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+      }
+    }
+    if (key === 'voice') {
+      if (next.voice) {
+        startVoice();
+      } else {
+        setVoiceStatus('idle');
+      }
+    }
+    if (key === 'notifications') {
+      if (next.notifications && 'Notification' in window) {
+        Notification.requestPermission();
+      }
+    }
+  };
+
+  const startVoice = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Voice recognition is not supported in this browser. Try Chrome or Edge.'); return; }
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.lang = lang === 'ar' ? 'ar-EG' : 'en-US';
+    recognition.interimResults = false;
+    recognition.onstart = () => setVoiceStatus('listening');
+    recognition.onend = () => setVoiceStatus('idle');
+    recognition.onerror = () => setVoiceStatus('error');
+    recognition.onresult = (e) => {
+      const cmd = e.results[0][0].transcript.toLowerCase();
+      let response = '';
+      if (cmd.includes('recipe') || cmd.includes('cook')) response = 'Navigate to Recipes page to find your recipes!';
+      else if (cmd.includes('shop') || cmd.includes('shopping')) response = 'Your shopping list is in the Shopping tab!';
+      else if (cmd.includes('timer')) response = 'Go to Timers to set a kitchen timer!';
+      else if (cmd.includes('inventory')) response = 'Check your Inventory to see what you have!';
+      else response = `Voice command received: "${e.results[0][0].transcript}"`;
+      alert('🎙️ ' + response);
+      setVoiceStatus('idle');
+    };
+    try { recognition.start(); } catch(e) { setVoiceStatus('error'); }
+  };
+
+  // Apply dark mode on mount based on saved settings
+  useEffect(() => { applyDarkMode(settings.darkMode); }, []);
+
+  const Toggle = ({ val, onToggle }) => (
+    <div onClick={onToggle} style={{ width: 52, height: 28, borderRadius: 14, background: val ? 'var(--accent-orange)' : 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative', transition: 'background 0.3s ease', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 4, left: val ? 28 : 4, width: 20, height: 20, borderRadius: '50%', background: 'white', transition: 'left 0.3s ease', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}/>
+    </div>
+  );
+
+  const rows = [
+    { key: 'darkMode', labelKey: 'darkMode', descKey: 'darkModeDesc', icon: '🌙' },
+    { key: 'voice', labelKey: 'voiceCommands', descKey: 'voiceCommandsDesc', icon: '🎙️' },
+    { key: 'notifications', labelKey: 'timerAlerts', descKey: 'timerAlertsDesc', icon: '🔔' },
+    { key: 'tabletMode', labelKey: 'tabletMode', descKey: 'tabletModeDesc', icon: '📱' },
+    { key: 'fullscreen', labelKey: 'fullscreen', descKey: 'fullscreenDesc', icon: '⛶' },
+  ];
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }} className="scrollable hide-scroll fade-in">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)' }}>{t('title', 'settings')}</div>
+        {voiceStatus === 'listening' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 20, background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.4)' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-orange)', animation: 'pulse 1s infinite' }}/>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--accent-orange)', fontWeight: 600 }}>🎙️ Listening...</span>
+          </div>
+        )}
+        {voiceStatus === 'error' && (
+          <div style={{ padding: '8px 16px', borderRadius: 20, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--accent-red)' }}>
+            ❌ Voice not supported
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{t('preferences', 'settings')}</div>
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 24, width: 40, textAlign: 'center' }}>🌐</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{t('language', 'settings')}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)' }}>Choose your preferred language</div>
+              </div>
+              <select className="input" value={lang} onChange={(e) => setLang(e.target.value)} style={{ width: 120, padding: '8px 12px', fontSize: 14 }}>
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+              </select>
+            </div>
+            {rows.map((row) => (
+              <div key={row.key}>
+                <div className="divider"/>
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ fontSize: 24, width: 40, textAlign: 'center' }}>{row.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{t(row.labelKey, 'settings')}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)' }}>{t(row.descKey, 'settings')}</div>
+                  </div>
+                  <Toggle val={settings[row.key]} onToggle={() => toggle(row.key)}/>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Voice Command Button */}
+          {settings.voice && (
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: 12, padding: '14px' }} onClick={startVoice}>
+              <Icon name="mic" size={18}/> {voiceStatus === 'listening' ? '🎙️ Listening...' : 'Tap to Speak'}
+            </button>
+          )}
+        </div>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{t('account', 'settings')}</div>
+          <div className="card" style={{ padding: '20px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-orange), #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>{profile.emoji}</div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{profile.name}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-muted)' }}>{profile.bio}</div>
+              </div>
+            </div>
+            <div className="divider" style={{ marginBottom: 16 }}/>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { key: 'editProfile', label: t('editProfile', 'settings'), action: () => setActiveModal('profile') },
+                { key: 'connectedDevices', label: t('connectedDevices', 'settings'), action: () => setActiveModal('devices') },
+                { key: 'dataPrivacy', label: t('dataPrivacy', 'settings'), action: () => setActiveModal('privacy') },
+                { key: 'about', label: t('about', 'settings'), action: () => setActiveModal('about') }
+              ].map(item => (
+                <div key={item.key} style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}
+                  onClick={item.action}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
+                  {item.label}<Icon name="arrow" size={14} color="var(--text-muted)"/>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card" style={{ padding: '16px 20px' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>KitchenOS v3.0 — Egyptian Edition</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-muted)' }}>🇪🇬 Built with love for Egyptian cooking</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--accent-orange)', marginTop: 8 }}>✅ Inventory & Shopping List auto-save</div>
+          </div>
+        </div>
+      </div>
+      {activeModal === 'profile' && <ProfileModal onClose={() => setActiveModal(null)} profile={profile} setProfile={setProfile}/>}
+      {activeModal === 'devices' && <DevicesModal onClose={() => setActiveModal(null)}/>}
+      {activeModal === 'privacy' && <PrivacyModal onClose={() => setActiveModal(null)}/>}
+      {activeModal === 'about' && <AboutModal onClose={() => setActiveModal(null)}/>}
+    </div>
+  );
+};
+
+// ─── APP SHELL ─────────────────────────────────────────────────────────────────
+const App = () => {
+  const [page, setPage] = useState('home');
+  const [cookingRecipe, setCookingRecipe] = useState(null);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [favorites, setFavorites] = useState(() => LS.get('favorites', [1, 8]));
+  const [lang, setLang] = useState(() => LS.get('language', 'en'));
+  const [recipes, setRecipes] = useState(() => {
+    const custom = LS.get('recipes_custom', []);
+    return [...DEFAULT_RECIPES, ...custom];
+  });
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (selectedRecipe || cookingRecipe) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [selectedRecipe, cookingRecipe]);
+
+  // Save language to localStorage when it changes
+  useEffect(() => {
+    LS.set('language', lang);
+  }, [lang]);
+
+  const toggleFav = (id) => {
+    const next = favorites.includes(id) ? favorites.filter(x => x !== id) : [...favorites, id];
+    setFavorites(next);
+    LS.set('favorites', next);
+  };
+
+  const t = (key, section = 'common') => {
+    return TRANSLATIONS[lang]?.[section]?.[key] || TRANSLATIONS.en[section]?.[key] || key;
+  };
+
+  const navItems = [
+    { id: 'home', icon: 'home', labelKey: 'home' },
+    { id: 'recipes', icon: 'book', labelKey: 'recipes' },
+    { id: 'shopping', icon: 'cart', labelKey: 'shopping' },
+    { id: 'inventory', icon: 'box', labelKey: 'inventory' },
+    { id: 'ai', icon: 'bot', labelKey: 'ai' },
+    { id: 'timers', icon: 'timer', labelKey: 'timers' },
+    { id: 'settings', icon: 'settings', labelKey: 'settings' },
+  ];
+
+  return (
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)', fontFamily: lang === 'ar' ? "'Noto Sans Arabic', var(--font-display)" : 'var(--font-display)' }}>
+      <div style={{ height: 64, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, var(--accent-orange), #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 4px 12px rgba(249,115,22,0.4)' }}>🇪🇬</div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, color: 'var(--text-primary)', lineHeight: 1.1 }}>KitchenOS</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent-orange)', letterSpacing: '0.15em' }}>EGYPTIAN SMART KITCHEN</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {navItems.map(nav => (
+            <div key={nav.id} className={`nav-item ${page === nav.id ? 'active' : ''}`} onClick={() => setPage(nav.id)}>
+              <Icon name={nav.icon} size={20} color={page === nav.id ? 'var(--accent-orange)' : 'currentColor'}/>
+              {t(nav.labelKey, 'nav')}
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="btn-icon" title="Fullscreen" onClick={() => {
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+            } else {
+              document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+            }
+          }}>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.04)', padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)' }}>
+            💾 Auto-saved
+          </div>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {page === 'home' && <HomePage setPage={setPage} recipes={recipes} favorites={favorites} lang={lang} t={t}/>}
+        {page === 'recipes' && <RecipesPage recipes={recipes} setRecipes={setRecipes} onCook={r => setCookingRecipe(r)} favorites={favorites} toggleFav={toggleFav} lang={lang} t={t} setSelectedRecipe={setSelectedRecipe}/>}
+        {page === 'shopping' && <ShoppingPage lang={lang} t={t}/>}
+        {page === 'inventory' && <InventoryPage lang={lang} t={t}/>}
+        {page === 'ai' && <AIPage lang={lang} t={t}/>}
+        {page === 'timers' && <TimersPage lang={lang} t={t}/>}
+        {page === 'settings' && <SettingsPage lang={lang} t={t} setLang={setLang}/>}
+      </div>
+      {selectedRecipe && <RecipeModal recipe={selectedRecipe} onClose={() => setSelectedRecipe(null)} onCook={r => { setCookingRecipe(r); setSelectedRecipe(null); }} favorites={favorites} toggleFav={toggleFav} lang={lang} t={t}/>}
+      {cookingRecipe && <CookingMode recipe={cookingRecipe} onExit={() => setCookingRecipe(null)} lang={lang} t={t}/>}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
